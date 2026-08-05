@@ -1,0 +1,504 @@
+/* =========================================================================
+   LUVIZMUSIC - sections
+   U4. Hero, crew, mixes, events, contact: the dressing of the five blocks
+   the page is made of, plus the empty states and the missing-media tiles.
+
+   Composed from the U3 primitives in css/texture.css - .misreg, .duotone,
+   .rule-box, .chip, .price-tag, .barcode - and the type roles in
+   css/type.css. Nothing here reimplements a primitive and nothing here
+   declares a literal colour: every colour comes from css/tokens.css.
+   ========================================================================= */
+
+
+/* =========================================================================
+   1. HERO
+   -------------------------------------------------------------------------
+   The wordmark is inline SVG text with a viewBox (KTD13), so it scales
+   geometrically: it cannot overflow, whatever the viewport, and whatever
+   face is loaded. textLength + lengthAdjust pin the drawn width to the
+   viewBox, so the fallback face during the font swap draws at the same width
+   as Mark Pro rather than wider.
+
+   ON A PHONE IT IS DELIBERATELY BIGGER THAN THE SCREEN. The mark is set to
+   118% of the column and pulled left, so both ends run off the page. The
+   section clips it. That reads as a sleeve cropped by the trim edge, which
+   is more dramatic at 320px than a timid mark with margins - and because the
+   clipping happens here, the page body still never scrolls sideways (R18).
+   ========================================================================= */
+
+.section--hero {
+  /* clip, not hidden: clip does not make this a scroll container, so U8's
+     ScrollTrigger work is not fighting an accidental scroll box. */
+  overflow-x: hidden;
+  overflow-x: clip;
+  padding-top: var(--space-l);
+}
+
+.hero__title {
+  margin-bottom: var(--space-m);
+}
+
+.hero__wordmark {
+  display: block;
+  width: 118%;
+  /* base.css caps every img and svg at 100% so nothing can push the page
+     sideways. This is the one deliberate exception, and it is safe because
+     .section--hero clips it: the mark runs off both trim edges, the document
+     still never scrolls sideways. */
+  max-width: none;
+  margin-left: -9%;
+  color: var(--ink-bone);
+}
+
+.hero__impression,
+.hero__plate {
+  font-family: var(--type-family);
+  font-style: var(--voice-style);
+  font-weight: var(--voice-weight);
+  font-size: 140px; /* SVG user units, not screen pixels: the viewBox scales them */
+  letter-spacing: var(--track-display);
+}
+
+.hero__impression {
+  fill: currentColor;
+}
+
+/*
+  The two plates that drifted. Offsets are the misregistration tokens times
+  three, because one SVG user unit is roughly a third of a device pixel at
+  phone width - so this lands in the same 1-3px off-press band the rest of
+  the site uses, and U8 can drive it by animating the same two tokens.
+*/
+.hero__plate {
+  opacity: var(--misreg-ghost);
+}
+
+.hero__plate--a {
+  fill: var(--red-bright);
+  transform: translate(calc(var(--misreg-x) * -3), calc(var(--misreg-y) * -3));
+}
+
+.hero__plate--b {
+  fill: var(--ink-bone);
+  transform: translate(calc(var(--misreg-x) * 3), calc(var(--misreg-y) * 3));
+}
+
+.hero__tagline {
+  font-size: var(--type-title);
+  font-style: var(--voice-style);
+  font-weight: var(--voice-weight);
+  line-height: var(--leading-title);
+  letter-spacing: var(--track-title);
+  max-width: var(--measure-min);
+}
+
+.hero__blurb {
+  margin-top: var(--space-m);
+  opacity: var(--ink-coverage-quiet);
+}
+
+.hero__jump {
+  margin-top: var(--space-l);
+}
+
+.hero__jump a {
+  display: inline-block;
+  padding-bottom: var(--space-3xs);
+  border-bottom: var(--rule-thick) solid var(--red-bright);
+  text-decoration: none;
+}
+
+.noscript-note {
+  margin-top: var(--space-m);
+  border-left: var(--rule-thick) solid var(--red-bright);
+  padding-left: var(--space-2xs);
+}
+
+
+/* =========================================================================
+   2. MISSING MEDIA
+   -------------------------------------------------------------------------
+   A crew photo or a mix cover that 404s must never print a broken-image
+   glyph inside a duotone card. js/sections.js swaps the class on error - and
+   on a cached failure, which fires no error event - and the tile below takes
+   over: a ruled type-only plate carrying the initials. It is on palette, it
+   is legible, and it looks like a decision.
+   ========================================================================= */
+
+.media {
+  position: relative;
+  aspect-ratio: 4 / 5;
+  width: 100%;
+}
+
+.media--square {
+  aspect-ratio: 1 / 1;
+}
+
+.media--fallback {
+  display: grid;
+  place-content: center;
+  gap: var(--space-3xs);
+  padding: var(--space-s);
+  text-align: center;
+  background-color: var(--ground-near-black);
+  color: var(--ink-bone);
+  border: var(--rule-thin) solid currentColor;
+}
+
+.media__initials {
+  font-size: var(--type-headline);
+  font-style: var(--voice-style);
+  font-weight: var(--voice-weight);
+  line-height: 1;
+  letter-spacing: var(--track-headline);
+  opacity: var(--ink-coverage-ghost);
+}
+
+.media__note {
+  font-size: var(--type-label);
+  font-weight: var(--info-weight-loud);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  opacity: var(--ink-coverage-quiet);
+}
+
+
+/* =========================================================================
+   3. CREW
+   ========================================================================= */
+
+.crew-list,
+.mix-list {
+  display: grid;
+  gap: var(--space-xl);
+}
+
+.crew-card__nameplate {
+  margin-top: var(--space-s);
+  align-items: center;
+}
+
+/* Layered type by grid overlap: the ghost numeral and the name occupy the
+   same cell, source order intact. The numeral is decorative and marked
+   aria-hidden in the markup. */
+.crew-card__index {
+  font-size: var(--type-headline);
+  font-style: var(--info-style);
+  font-weight: var(--info-weight-hairline);
+  line-height: 1;
+  justify-self: start;
+  opacity: var(--ink-coverage-ghost);
+}
+
+.crew-card__name {
+  font-size: var(--type-title);
+  font-style: var(--voice-style);
+  font-weight: var(--voice-weight);
+  line-height: var(--leading-title);
+  letter-spacing: var(--track-title);
+  justify-self: start;
+  padding-left: var(--space-m);
+}
+
+.crew-card__alias {
+  margin-top: var(--space-2xs);
+  font-size: var(--type-label);
+  font-weight: var(--info-weight-loud);
+}
+
+.crew-card__bio {
+  margin-top: var(--space-2xs);
+  font-size: var(--type-body);
+  opacity: var(--ink-coverage-quiet);
+}
+
+.link-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-s);
+  margin-top: var(--space-s);
+}
+
+.link-row a {
+  font-size: var(--type-caption);
+  font-weight: var(--info-weight-loud);
+  text-transform: uppercase;
+  letter-spacing: var(--track-label-tight);
+  text-decoration: none;
+  border-bottom: var(--rule-thin) solid var(--red-bright);
+  padding-bottom: var(--space-3xs);
+}
+
+
+/* =========================================================================
+   4. MIXES
+   -------------------------------------------------------------------------
+   U4 renders the shelf. U6 and U7 wire the player bar to it: every card
+   carries data-mix-index, and the artwork and title are the hit targets a
+   play control will hang off. Until then a card is an honest link out to the
+   provider, which works with no player at all.
+   ========================================================================= */
+
+.mix-card__meta {
+  margin-top: var(--space-s);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.mix-card__title {
+  margin-top: var(--space-2xs);
+  font-size: var(--type-title);
+  font-style: var(--voice-style);
+  font-weight: var(--voice-weight-quiet);
+  line-height: var(--leading-title);
+  letter-spacing: var(--track-title);
+}
+
+.mix-card__credit {
+  margin-top: var(--space-3xs);
+  font-size: var(--type-caption);
+  opacity: var(--ink-coverage-quiet);
+}
+
+
+/* =========================================================================
+   5. EVENTS
+   ========================================================================= */
+
+.events__group + .events__group {
+  margin-top: var(--space-xl);
+}
+
+.events__group-title {
+  padding-bottom: var(--space-2xs);
+  border-bottom: var(--rule-thick) solid currentColor;
+  font-size: var(--type-label);
+  font-weight: var(--info-weight-loud);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+.event {
+  display: grid;
+  gap: var(--space-2xs);
+  padding-block: var(--space-s);
+  border-bottom: var(--rule-hair) solid currentColor;
+}
+
+.event__plate {
+  justify-self: start;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum";
+  font-size: var(--type-caption);
+  font-weight: var(--info-weight-loud);
+  letter-spacing: var(--track-label-tight);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.event__day {
+  font-size: var(--type-title);
+  font-style: var(--voice-style);
+  font-weight: var(--voice-weight);
+  letter-spacing: var(--track-title);
+}
+
+.event__title {
+  font-size: var(--type-title);
+  font-style: var(--voice-style);
+  font-weight: var(--voice-weight-quiet);
+  line-height: var(--leading-title);
+  letter-spacing: var(--track-title);
+}
+
+.event__where {
+  margin-top: var(--space-3xs);
+  font-size: var(--type-caption);
+  opacity: var(--ink-coverage-quiet);
+}
+
+.event__action a {
+  display: inline-block;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: var(--rule-thin) solid currentColor;
+  font-size: var(--type-label);
+  font-weight: var(--info-weight-loud);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.event__action a:hover {
+  background-color: var(--red-bright);
+  color: var(--ground-near-black);
+  border-color: var(--red-bright);
+}
+
+/* A night with no tickets on sale says so rather than showing a dead link. */
+.event__pending {
+  font-size: var(--type-label);
+  font-weight: var(--info-weight-loud);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  opacity: var(--ink-coverage-quiet);
+  white-space: nowrap;
+}
+
+/* Dates the page could not read. Named, never silently dropped (R9a). */
+.events__problems {
+  margin-top: var(--space-l);
+  border-color: var(--red-bright);
+  color: var(--red-bright);
+}
+
+.events__problems li {
+  font-size: var(--type-caption);
+  color: var(--ink-bone);
+}
+
+.events__problems li + li {
+  margin-top: var(--space-3xs);
+}
+
+
+/* =========================================================================
+   6. EMPTY STATES
+   -------------------------------------------------------------------------
+   "No upcoming events" is this site's steady state between parties. It is
+   not an error and it is not an absence: it is a printed notice, set in the
+   same supermarket grammar as everything else, carrying the line that says
+   what happens next. Same treatment for an empty crew and an empty shelf of
+   mixes.
+   ========================================================================= */
+
+.empty {
+  --barcode-height: var(--space-m);
+  padding: var(--space-m);
+}
+
+.empty__label {
+  font-size: var(--type-label);
+  font-weight: var(--info-weight-loud);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  color: var(--red-bright);
+}
+
+.empty__line {
+  margin-top: var(--space-2xs);
+  font-size: var(--type-title);
+  font-style: var(--voice-style);
+  font-weight: var(--voice-weight);
+  line-height: var(--leading-title);
+  letter-spacing: var(--track-title);
+  max-width: var(--measure-min);
+}
+
+.empty__note {
+  margin-top: var(--space-2xs);
+  font-size: var(--type-caption);
+  opacity: var(--ink-coverage-quiet);
+  max-width: var(--measure);
+}
+
+.empty .barcode {
+  margin-top: var(--space-m);
+}
+
+/* On the bone stock the loud red is the deep one. */
+.on-bone .empty__label,
+.on-bone .events__problems {
+  color: var(--red-deep);
+}
+
+
+/* =========================================================================
+   7. CONTACT
+   -------------------------------------------------------------------------
+   The last section is printed on the other stock. Two inks, one press: the
+   page turns over. Ink is near-black, the loud red is the deep one, focus
+   rings switch to the deep red via the .on-bone rule in css/base.css, and
+   chips flip to their on-bone pairing.
+   ========================================================================= */
+
+.section--contact {
+  background-color: var(--ground-bone);
+  color: var(--ink-near-black);
+}
+
+.contact__line {
+  font-size: var(--type-lede);
+  max-width: var(--measure);
+}
+
+.contact__email {
+  text-decoration-thickness: var(--rule-thin);
+}
+
+.contact-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs);
+  margin-top: var(--space-l);
+}
+
+.contact-links a {
+  text-decoration: none;
+  font-size: var(--type-label);
+  font-weight: var(--info-weight-loud);
+}
+
+
+/* =========================================================================
+   8. THE BANDS
+   Layout changes, not type-size changes: type is already fluid (type.css).
+   ========================================================================= */
+
+@media (min-width: 600px) {
+
+  .hero__wordmark {
+    width: 106%;
+    margin-left: -3%;
+  }
+
+  .crew-list,
+  .mix-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  /* Day-plate beside the night, rather than stacked above it. */
+  .event {
+    grid-template-columns: minmax(7rem, auto) 1fr;
+    align-items: baseline;
+    gap: var(--space-m);
+  }
+
+}
+
+@media (min-width: 1024px) {
+
+  .hero__wordmark {
+    width: 100%;
+    margin-left: 0;
+  }
+
+  .crew-list,
+  .mix-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  /* Plate, night, tickets: three columns, the way a listing page prints. */
+  .event {
+    grid-template-columns: minmax(8rem, auto) 1fr auto;
+    column-gap: var(--space-l);
+  }
+
+  .event__action {
+    justify-self: end;
+  }
+
+}

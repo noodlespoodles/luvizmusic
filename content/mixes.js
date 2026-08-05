@@ -68,63 +68,146 @@
 
 window.LUVIZ.mixes = [
 
-  /* --- A SoundCloud mix with a full three-part tempo map. ---------------- */
-  {
-    title: 'Night 014 - Ama Dwomoh (Peak)',
-    provider: 'soundcloud',
-    url: 'https://soundcloud.com/luvizmusic/night-014-ama-dwomoh-peak',
-    artwork: 'assets/mixes/night-014.jpg',
-    credit: 'Uploaded by LUVIZMUSIC',
-    beatGrid: [
-      { atMs: 0, bpm: 118 },        /* opening stretch, 0 min in */
-      { atMs: 1140000, bpm: 124 },  /* lifts at 19 min */
-      { atMs: 2760000, bpm: 128 },  /* peak from 46 min */
-    ],
-  },
+  /* ------------------------------------------------------------------------
+     THESE ARE REAL. Pulled from https://www.mixcloud.com/raboobi/ on
+     2026-08-05, newest first.
 
-  /* --- A YouTube mix at one steady tempo the whole way through. ---------- */
-  {
-    title: 'Night 011 - Sister Freq (Closing)',
-    provider: 'youtube',
-    url: 'https://www.youtube.com/watch?v=LUVIZplaceholder',
-    artwork: 'assets/mixes/night-011.jpg',
-    credit: 'Filmed by Teodor Balan',
-    beatGrid: [
-      { atMs: 0, bpm: 122 },        /* one entry = one tempo, start to finish */
-    ],
-  },
+     NO BEAT GRIDS YET. Without one a mix simply does not pulse, which is on
+     purpose: a wrong tempo looks worse than no pulse at all, because the
+     visuals drift out of time within a few minutes. To switch the pulsing on
+     for a mix, add a beatGrid to it. See the example at the bottom of this
+     file.
+     ---------------------------------------------------------------------- */
 
-  /* --- A Mixcloud mix with NO beat grid: it plays, it does not pulse. ---- */
   {
-    title: 'Panorama - System Test, 3am',
+    title: 'Shadowmixer 0321',
     provider: 'mixcloud',
-    url: 'https://www.mixcloud.com/luvizmusic/panorama-system-test-3am/',
-    artwork: 'assets/mixes/system-test.jpg',
-    credit: 'Uploaded by LUVIZMUSIC',
-    /* No beatGrid line here on purpose - the tempo wanders too much to map. */
+    url: 'https://www.mixcloud.com/raboobi/shadowmixer-0321/',
+    credit: 'raboobi on Mixcloud',  /* house */
   },
 
-  /* --- A mix hosted in this website's own folder. ------------------------ */
   {
-    title: 'Warm Room - Opening Hour',
-    provider: 'file',
-    url: 'media/mixes/warm-room-opening-hour.mp3',
-    artwork: 'assets/mixes/warm-room.jpg',
-    credit: 'Recorded live at The Annexe',
-    beatGrid: [
-      { atMs: 0, bpm: 112 },
-      { atMs: 900000, bpm: 120 },   /* picks up at 15 min */
-    ],
+    title: 'mAsTeR sTuDiO',
+    provider: 'mixcloud',
+    url: 'https://www.mixcloud.com/raboobi/master-studio/',
+    credit: 'raboobi on Mixcloud',
   },
 
-  /* --- The bare minimum a mix can be: title, provider, url. -------------- */
   {
-    title: 'Night 009 - Teo (First Hour)',
+    title: 'Merci B - Good Vibes Radio - 0919',
+    provider: 'mixcloud',
+    url: 'https://www.mixcloud.com/raboobi/merci-b-good-vibes-radio-0919/',
+    credit: 'raboobi on Mixcloud',
+  },
+
+  {
+    title: 'Knee',
+    provider: 'mixcloud',
+    url: 'https://www.mixcloud.com/raboobi/knee/',
+    credit: 'raboobi on Mixcloud',
+  },
+
+  {
+    title: 'E36',
+    provider: 'mixcloud',
+    url: 'https://www.mixcloud.com/raboobi/e36/',
+    credit: 'raboobi on Mixcloud',  /* house */
+  },
+
+  {
+    title: 'Boris is 40 yo',
+    provider: 'mixcloud',
+    url: 'https://www.mixcloud.com/raboobi/boris-is-40-yo/',
+    credit: 'raboobi on Mixcloud',  /* deep house, hip hop */
+  },
+
+  {
+    title: 'Mac Banana 3',
+    provider: 'mixcloud',
+    url: 'https://www.mixcloud.com/raboobi/mac-banana-3/',
+    credit: 'raboobi on Mixcloud',  /* house, deep house, jazz, hip hop, disco */
+  },
+
+  {
+    title: 'Disco Delta Tango',
+    provider: 'mixcloud',
+    url: 'https://www.mixcloud.com/raboobi/disco-delta-tango/',
+    credit: 'raboobi on Mixcloud',  /* disco */
+  },
+
+  {
+    title: 'Mac Banana 001',
+    provider: 'mixcloud',
+    url: 'https://www.mixcloud.com/raboobi/mac-banana-001/',
+    credit: 'raboobi on Mixcloud',  /* jazz, house, funk, techno, hip hop */
+  },
+
+  {
+    title: 'Nice party teaser mix',
+    provider: 'mixcloud',
+    url: 'https://www.mixcloud.com/raboobi/nice-party-teaser-mix/',
+    credit: 'raboobi on Mixcloud',
+  },
+
+  /* ------------------------------------------------------------------------
+     OTHER PLACES YOU CAN HOST A MIX
+
+     The site handles four hosts. Only Mixcloud is in use above. When you post
+     a mix somewhere else, copy the matching block below, delete the comment
+     markers wrapping it, and fill in your link.
+
+     Worth knowing: a YouTube mix has to show a real, visible YouTube player,
+     because YouTube's rules forbid hiding it. SoundCloud and Mixcloud can sit
+     in the slim bar. A 'file' mix is an audio file you put in the site folder
+     yourself, and it is the only kind that can never be taken down by anyone
+     else.
+     ---------------------------------------------------------------------- */
+
+  /*
+  {
+    title: 'A mix hosted on SoundCloud',
     provider: 'soundcloud',
-    url: 'https://soundcloud.com/luvizmusic/night-009-teo-first-hour',
+    url: 'https://soundcloud.com/your-name/your-mix',
+    credit: 'Uploaded by LUVIZMUSIC',
   },
+
+  {
+    title: 'A mix hosted on YouTube',
+    provider: 'youtube',
+    url: 'https://www.youtube.com/watch?v=REPLACE_ME',
+  },
+
+  {
+    title: 'A mix you host yourself',
+    provider: 'file',
+    url: 'media/mixes/your-mix.mp3',
+  },
+  */
+
+  /* ------------------------------------------------------------------------
+     HOW TO MAKE A MIX PULSE IN TIME
+
+     Add a beatGrid. It is a list of tempo changes. atMs is how many
+     milliseconds into the mix the tempo changes, and bpm is the beats per
+     minute from that point on. One minute is 60000 milliseconds.
+
+     If the whole mix is one steady tempo, a single line is enough:
+
+       beatGrid: [ { atMs: 0, bpm: 122 } ],
+
+     If it moves through several tracks at different tempos, add a line each
+     time it changes, in order:
+
+       beatGrid: [
+         { atMs: 0,       bpm: 118 },   // opens at 118
+         { atMs: 1140000, bpm: 124 },   // lifts at 19 minutes
+         { atMs: 2700000, bpm: 121 },   // settles at 45 minutes
+       ],
+
+     You do not have to be perfect. Being a beat or two out is fine. Being ten
+     out is not, so if you are unsure, leave the beatGrid off entirely.
+     ---------------------------------------------------------------------- */
 
 ];
 
-/* Leave this last line alone. It tells the page this file loaded correctly. */
-window.LUVIZ._loaded('mixes');
+if (window.LUVIZ._loaded) { window.LUVIZ._loaded('mixes'); }

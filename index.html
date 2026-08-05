@@ -34,52 +34,172 @@
 </head>
 <body>
 
-  <main id="main">
+  <!--
+    SKIP LINKS. First two things in the tab order, invisible until focused
+    (R21). The player link ships hidden and js/app.js reveals it only once a
+    player bar actually exists, so it can never point at nothing.
+  -->
+  <a class="skip-link" href="#main">Skip to the words</a>
+  <a class="skip-link" href="#player-bar" id="skip-to-player" hidden>Skip to the player controls</a>
 
-    <section id="hero" aria-labelledby="hero-title">
-      <h1 id="hero-title">LUVIZMUSIC</h1>
-      <p>You have no taste. Let us help.</p>
-      <noscript>
-        <p>The animated wordmark and the site tagline need JavaScript. The
-        crew, the mixes and the dates are listed below.</p>
-      </noscript>
+  <!--
+    THE FIXED MARK AND NAVIGATION (R4).
+
+    A direct child of body, outside every transformed ancestor, so
+    position: fixed means what it says and --layer-nav actually wins.
+
+    NOTHING IN HERE IS DEGRADED. No grain, no misregistration, no
+    posterisation, no duotone. The whole device is one never-degraded mark
+    held over a field that decays: texture it and there is nothing left to
+    measure the decay against. .above-grain lifts it over the grain overlay.
+  -->
+  <header class="masthead above-grain" id="masthead">
+    <a class="masthead__mark" href="#hero">LUVIZMUSIC</a>
+    <nav class="masthead__nav" aria-label="Sections">
+      <ul class="masthead__list">
+        <li><a class="masthead__link" href="#crew">Crew</a></li>
+        <li><a class="masthead__link" href="#mixes">Mixes</a></li>
+        <li><a class="masthead__link" href="#events">Dates</a></li>
+        <li><a class="masthead__link" href="#contact">Contact</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <main id="main" tabindex="-1">
+
+    <!--
+      R9a. js/app.js fills this in and unhides it when a content file fails
+      to load or an entry does not validate. It names the file in plain
+      English and the rest of the page still renders.
+    -->
+    <div class="content-alert on-bone" id="content-alert" hidden></div>
+
+    <section id="hero" class="section section--hero" aria-labelledby="hero-title">
+      <div class="section__inner hero__inner">
+
+        <!--
+          KTD13. The wordmark is SVG text with a viewBox, so it scales
+          geometrically and cannot overflow at 320px. textLength pins the
+          drawn width to the viewBox whatever face is loaded, so the fallback
+          face during the font swap cannot push it wider either. The two
+          ghost plates are the press running off register; the third
+          impression is the true one. The whole thing is one image to a
+          screen reader, labelled once.
+        -->
+        <h1 id="hero-title" class="hero__title">
+          <svg class="hero__wordmark" viewBox="0 0 1000 200" role="img"
+               aria-label="LUVIZMUSIC" focusable="false"
+               preserveAspectRatio="xMidYMid meet">
+            <text class="hero__plate hero__plate--a" x="500" y="158"
+                  text-anchor="middle" textLength="1000"
+                  lengthAdjust="spacingAndGlyphs">LUVIZMUSIC</text>
+            <text class="hero__plate hero__plate--b" x="500" y="158"
+                  text-anchor="middle" textLength="1000"
+                  lengthAdjust="spacingAndGlyphs">LUVIZMUSIC</text>
+            <text class="hero__impression" x="500" y="158"
+                  text-anchor="middle" textLength="1000"
+                  lengthAdjust="spacingAndGlyphs">LUVIZMUSIC</text>
+          </svg>
+        </h1>
+
+        <!--
+          THE TAGLINE IS DUPLICATED ON PURPOSE. content/site.js is the source
+          of truth and JavaScript rewrites this paragraph at boot; this static
+          copy is what survives with JavaScript off (R22).
+          EDIT content/site.js FIRST, then mirror it here. tests/content.test.js
+          fails if the two drift apart.
+        -->
+        <p class="hero__tagline" id="hero-tagline">You have no taste. Let us help.</p>
+
+        <!-- Same arrangement for the blurb: static copy, rewritten from content/site.js. -->
+        <p class="hero__blurb t-lede" id="hero-blurb">LUVIZMUSIC is a roaming night in
+        the Paradise Garage lineage: long sets, loud lows, and a floor that is treated
+        as an instrument. No guest-list theatre, no phones at the front, no records
+        played to be filmed.</p>
+
+        <p class="hero__jump t-label"><a href="#events">Next dates</a></p>
+
+        <noscript>
+          <p class="noscript-note t-caption">The wordmark above is drawn, not
+          animated, so it needs nothing. The crew, the mixes and the dates below
+          are loaded by JavaScript.</p>
+        </noscript>
+      </div>
     </section>
 
-    <section id="crew" aria-labelledby="crew-title">
-      <h2 id="crew-title">Crew</h2>
-      <noscript>
-        <p>The resident list needs JavaScript to load. Email
-        <a href="mailto:bookings@luvizmusic.example">bookings@luvizmusic.example</a>
-        and we will send it to you.</p>
-      </noscript>
+    <section id="crew" class="section" aria-labelledby="crew-title">
+      <div class="section__inner">
+        <header class="section-head">
+          <p class="section-head__eyebrow t-label">01 / Residents</p>
+          <h2 id="crew-title" class="section-head__title misreg" data-misreg="Crew">Crew</h2>
+          <p class="section-head__note t-caption">Four people, one room, one system.</p>
+        </header>
+
+        <ul class="crew-list" id="crew-list"></ul>
+
+        <noscript>
+          <p class="noscript-note t-caption">The resident list needs JavaScript to load. Email
+          <a href="mailto:bookings@luvizmusic.example">bookings@luvizmusic.example</a>
+          and we will send it to you.</p>
+        </noscript>
+      </div>
     </section>
 
-    <section id="mixes" aria-labelledby="mixes-title">
-      <h2 id="mixes-title">Mixes</h2>
-      <noscript>
-        <p>The mixes and the player need JavaScript. Our sets are also on
-        <a href="https://soundcloud.com/luvizmusic">SoundCloud</a> and
-        <a href="https://mixcloud.com/luvizmusic">Mixcloud</a>.</p>
-      </noscript>
+    <section id="mixes" class="section" aria-labelledby="mixes-title">
+      <div class="section__inner">
+        <header class="section-head">
+          <p class="section-head__eyebrow t-label">02 / Recorded</p>
+          <h2 id="mixes-title" class="section-head__title misreg" data-misreg="Mixes">Mixes</h2>
+          <p class="section-head__note t-caption">Recorded on the night, posted unedited.</p>
+        </header>
+
+        <ul class="mix-list" id="mix-list"></ul>
+
+        <noscript>
+          <p class="noscript-note t-caption">The mixes and the player need JavaScript. Our sets are also on
+          <a href="https://soundcloud.com/luvizmusic">SoundCloud</a> and
+          <a href="https://mixcloud.com/luvizmusic">Mixcloud</a>.</p>
+        </noscript>
+      </div>
     </section>
 
-    <section id="events" aria-labelledby="events-title">
-      <h2 id="events-title">Dates</h2>
-      <noscript>
-        <p>The dates list needs JavaScript to load. Upcoming nights are also
-        posted on <a href="https://instagram.com/luvizmusic">Instagram</a>.</p>
-      </noscript>
+    <section id="events" class="section" aria-labelledby="events-title">
+      <div class="section__inner">
+        <header class="section-head">
+          <p class="section-head__eyebrow t-label">03 / Diary</p>
+          <h2 id="events-title" class="section-head__title misreg" data-misreg="Dates">Dates</h2>
+          <p class="section-head__note t-caption">Doors, venue and city. Times go out with the tickets.</p>
+        </header>
+
+        <div class="events" id="events-lists"></div>
+
+        <noscript>
+          <p class="noscript-note t-caption">The dates list needs JavaScript to load. Upcoming nights are also
+          posted on <a href="https://instagram.com/luvizmusic">Instagram</a>.</p>
+        </noscript>
+      </div>
     </section>
 
-    <section id="contact" aria-labelledby="contact-title">
-      <h2 id="contact-title">Contact</h2>
-      <p>Bookings and press:
-        <a href="mailto:bookings@luvizmusic.example">bookings@luvizmusic.example</a>
-      </p>
-      <noscript>
-        <p>The social links need JavaScript to load. Email us at the address
-        above and we will point you at the rest.</p>
-      </noscript>
+    <!-- The last section is printed on the bone stock: near-black ink, deep
+         red focus rings, chips flipped to their on-bone pairing. -->
+    <section id="contact" class="section section--contact on-bone" aria-labelledby="contact-title">
+      <div class="section__inner">
+        <header class="section-head">
+          <p class="section-head__eyebrow t-label">04 / Say something</p>
+          <h2 id="contact-title" class="section-head__title misreg misreg--on-bone" data-misreg="Contact">Contact</h2>
+        </header>
+
+        <p class="contact__line">Bookings and press:
+          <a class="contact__email" id="contact-email" href="mailto:bookings@luvizmusic.example">bookings@luvizmusic.example</a>
+        </p>
+
+        <ul class="contact-links" id="contact-links"></ul>
+
+        <noscript>
+          <p class="noscript-note t-caption">The social links need JavaScript to load. Email us at the address
+          above and we will point you at the rest.</p>
+        </noscript>
+      </div>
     </section>
 
   </main>

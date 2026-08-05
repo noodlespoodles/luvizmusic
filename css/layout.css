@@ -1,0 +1,326 @@
+/* =========================================================================
+   LUVIZMUSIC - layout
+   U4. The page shell, the fixed mark and navigation, the content alert, and
+   the four breakpoints.
+
+   THE BREAKPOINTS, AND WHAT ACTUALLY CHANGES AT EACH
+   These four bands are shared with gsap.matchMedia() in U8. They are stated
+   once here as the single source of truth; nothing else in the site may
+   invent a fifth.
+
+     base       320 - 599    One column. The masthead is TWO ROWS: the mark on
+                             its own line, the nav on a rule beneath it, which
+                             is what keeps ten italic characters and four nav
+                             labels legible at 320px instead of squeezing both.
+                             The hero wordmark bleeds past both viewport edges.
+                             Crew and mixes are one card per row; a date stacks
+                             its day-plate above its title.
+
+     mid        600 - 1023   The masthead collapses to ONE ROW, mark left, nav
+                             right, and gets shorter - the reclaimed height is
+                             the point. Crew and mixes go to two columns. A date
+                             becomes two columns: day-plate beside the night.
+                             The wordmark bleeds less: 106% rather than 118%.
+
+     desktop    1024 - 1799  The column caps at 72rem and centres. Section
+                             openers split into a left rail carrying the
+                             eyebrow and a right column carrying the title, so
+                             the numbering reads as a printed running head.
+                             Crew and mixes go to three columns. A date becomes
+                             three columns: plate, night, tickets.
+
+     ultrawide  1800+        THE COMPOSITION CAPS AND THE FIELD KEEPS GOING.
+                             The reading column stops at 96rem and centres;
+                             the decorative field - grain, section rules,
+                             section grounds - runs to the viewport edge,
+                             because every rule and ground is drawn on the
+                             full-width <section> while only .section__inner
+                             is capped. Type does NOT keep growing: the scale
+                             in type.css tops out around 1600px on purpose.
+                             Nothing here uses 100vw; on Windows a classic
+                             scrollbar makes 100vw wider than the page and
+                             that is the usual cause of a stray horizontal
+                             scrollbar (R18).
+
+   NO LITERAL COLOURS. Every colour comes from css/tokens.css.
+   ========================================================================= */
+
+:root {
+  /* base band values; the media queries below restate them */
+  --gutter: var(--space-s);
+  --page-max: 40rem;
+  --section-rhythm: var(--space-xl);
+}
+
+
+/* =========================================================================
+   1. THE FIXED MARK AND NAV (R4)
+   -------------------------------------------------------------------------
+   A direct child of body, so `fixed` is measured against the viewport and
+   no transformed ancestor can quietly turn it into an absolutely positioned
+   element halfway down the page.
+
+   NOTHING HERE IS DEGRADED: no grain (the .above-grain class lifts it over
+   the overlay), no misregistration, no posterisation, no duotone, and
+   deliberately no backdrop-filter either - KTD12 rules it out on fixed
+   chrome, and an opaque ground is what actually keeps the nav legible over
+   a moving field.
+   ========================================================================= */
+
+.masthead {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--layer-nav);
+
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3xs);
+  padding: var(--space-2xs) var(--gutter);
+
+  background-color: var(--ground-near-black);
+  color: var(--ink-bone);
+  border-bottom: var(--rule-thin) solid currentColor;
+}
+
+.masthead__mark {
+  display: block;
+  font-size: var(--type-lede);
+  font-style: var(--voice-style);
+  font-weight: var(--voice-weight);
+  line-height: var(--leading-title);
+  letter-spacing: var(--track-title);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.masthead__list {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2xs);
+}
+
+.masthead__link {
+  display: block;
+  padding-block: var(--space-3xs);
+  font-size: var(--type-label);
+  font-style: var(--info-style);
+  font-weight: var(--info-weight-loud);
+  line-height: var(--leading-label);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  text-decoration: none;
+  border-bottom: var(--rule-thin) solid transparent;
+}
+
+.masthead__link:hover {
+  border-bottom-color: currentColor;
+}
+
+/* The section you are actually in, marked in red ink under the label. */
+.masthead__link[aria-current] {
+  color: var(--red-bright);
+  border-bottom-color: var(--red-bright);
+}
+
+
+/* =========================================================================
+   2. THE PAGE SHELL
+   ========================================================================= */
+
+main {
+  display: block;
+}
+
+.section {
+  position: relative;
+  padding-block: var(--section-rhythm);
+  /* Full-bleed rule: it is drawn on the section, which is never capped, so
+     at ultrawide it keeps running after the reading column has stopped. */
+  border-top: var(--rule-hair) solid currentColor;
+}
+
+.section:first-of-type {
+  border-top: 0;
+}
+
+.section__inner {
+  max-width: var(--page-max);
+  margin-inline: auto;
+  padding-inline: var(--gutter);
+}
+
+/* Layered type: overlap in a grid rather than by absolute positioning, so
+   source order and reflow survive. Decorative duplicates carry
+   aria-hidden="true"; nothing that has to meet contrast rides a blend mode. */
+.layer-stack {
+  display: grid;
+}
+
+.layer-stack > * {
+  grid-area: 1 / 1;
+}
+
+.section-head {
+  margin-bottom: var(--space-l);
+}
+
+.section-head__eyebrow {
+  margin-bottom: var(--space-2xs);
+  opacity: var(--ink-coverage-quiet);
+}
+
+.section-head__title {
+  font-size: var(--type-headline);
+  font-style: var(--voice-style);
+  font-weight: var(--voice-weight);
+  line-height: var(--leading-headline);
+  letter-spacing: var(--track-headline);
+}
+
+.section-head__note {
+  margin-top: var(--space-2xs);
+  opacity: var(--ink-coverage-quiet);
+  max-width: var(--measure-min);
+}
+
+
+/* =========================================================================
+   3. THE CONTENT ALERT (R9a)
+   -------------------------------------------------------------------------
+   Printed on the bone stock so it reads as an inserted errata slip rather
+   than as part of the design. js/app.js unhides it and fills it in, naming
+   the file that failed in plain English.
+   ========================================================================= */
+
+.content-alert {
+  max-width: var(--page-max);
+  margin: 0 auto var(--space-l);
+  padding: var(--space-s) var(--gutter);
+  background-color: var(--ground-bone);
+  color: var(--ink-near-black);
+  border-top: var(--rule-thick) solid var(--red-deep);
+  border-bottom: var(--rule-thick) solid var(--red-deep);
+}
+
+.content-alert__title {
+  font-size: var(--type-title);
+  font-style: var(--voice-style);
+  font-weight: var(--voice-weight-quiet);
+  line-height: var(--leading-title);
+  margin-bottom: var(--space-2xs);
+}
+
+.content-alert p {
+  font-size: var(--type-body);
+  max-width: var(--measure);
+}
+
+.content-alert p + p {
+  margin-top: var(--space-2xs);
+}
+
+.content-alert__list {
+  margin-top: var(--space-2xs);
+  padding-left: var(--space-s);
+  list-style: square;
+  font-size: var(--type-caption);
+}
+
+
+/* =========================================================================
+   4. MID: 600px and up
+   One-row masthead, two-column card grids, two-column dates.
+   ========================================================================= */
+
+@media (min-width: 600px) {
+
+  :root {
+    --gutter: var(--space-m);
+    --page-max: 46rem;
+    --section-rhythm: var(--space-2xl);
+    --nav-h: 4.25rem;
+  }
+
+  .masthead {
+    flex-direction: row;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--space-m);
+    padding-block: var(--space-2xs);
+  }
+
+  .masthead__list {
+    gap: var(--space-m);
+  }
+
+}
+
+
+/* =========================================================================
+   5. DESKTOP: 1024px and up
+   The column caps and centres; section openers gain a left rail.
+   ========================================================================= */
+
+@media (min-width: 1024px) {
+
+  :root {
+    --gutter: var(--space-l);
+    --page-max: 72rem;
+    --section-rhythm: var(--space-3xl);
+    --nav-h: 4.75rem;
+  }
+
+  .masthead {
+    padding-block: var(--space-xs);
+  }
+
+  .masthead__mark {
+    font-size: var(--type-title);
+  }
+
+  .masthead__list {
+    gap: var(--space-l);
+  }
+
+  .section-head {
+    display: grid;
+    grid-template-columns: 12rem 1fr;
+    column-gap: var(--space-l);
+    align-items: start;
+    margin-bottom: var(--space-xl);
+  }
+
+  .section-head__eyebrow {
+    grid-column: 1;
+    grid-row: 1;
+    margin-top: var(--space-2xs);
+  }
+
+  .section-head__title {
+    grid-column: 2;
+    grid-row: 1;
+  }
+
+  .section-head__note {
+    grid-column: 2;
+    grid-row: 2;
+  }
+
+}
+
+
+/* =========================================================================
+   6. ULTRAWIDE: 1800px and up
+   The composition caps. The field does not.
+   ========================================================================= */
+
+@media (min-width: 1800px) {
+
+  :root {
+    --gutter: var(--space-xl);
+    --page-max: 96rem;
+  }
+
+}

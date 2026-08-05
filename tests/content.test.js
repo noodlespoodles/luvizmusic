@@ -183,18 +183,61 @@ test('every mix declares a provider in the supported set', () => {
   assert.deepEqual(LUVIZ.validate.mixes(LUVIZ.mixes), []);
 });
 
-test('placeholder mixes cover all four providers (R9)', () => {
+// The shipped content is real (the crew's own Mixcloud uploads), so it is not a
+// fixture and must not be asserted against as if it were. Provider breadth and
+// beat-grid shape are properties of the VALIDATOR, proven here with synthetic
+// mixes; the content tests below only check that whatever is actually shipped
+// is well formed.
+test('the validator accepts every supported provider', () => {
   const { LUVIZ } = loadSite();
-  const used = new Set(LUVIZ.mixes.map((m) => m.provider));
   for (const provider of PROVIDERS) {
-    assert.ok(used.has(provider), 'no placeholder mix uses provider "' + provider + '"');
+    const problems = LUVIZ.validate.mixes([
+      { title: 'Probe', provider: provider, url: 'https://example.com/probe' },
+    ]);
+    assert.deepEqual(
+      problems,
+      [],
+      'provider "' + provider + '" should be accepted by validate.mixes'
+    );
   }
 });
 
-test('a mix with a beatGrid has ordered, in-range segments', () => {
+test('the validator enforces ordered, in-range beat grids', () => {
+  const { LUVIZ } = loadSite();
+  const base = { title: 'Probe', provider: 'mixcloud', url: 'https://example.com/p' };
+
+  assert.deepEqual(
+    LUVIZ.validate.mixes([
+      Object.assign({}, base, {
+        beatGrid: [{ atMs: 0, bpm: 118 }, { atMs: 1140000, bpm: 124 }],
+      }),
+    ]),
+    [],
+    'a well-formed multi-segment grid should validate'
+  );
+
+  assert.notDeepEqual(
+    LUVIZ.validate.mixes([
+      Object.assign({}, base, {
+        beatGrid: [{ atMs: 1140000, bpm: 124 }, { atMs: 0, bpm: 118 }],
+      }),
+    ]),
+    [],
+    'an out-of-order grid should be rejected'
+  );
+
+  assert.notDeepEqual(
+    LUVIZ.validate.mixes([
+      Object.assign({}, base, { beatGrid: [{ atMs: 0, bpm: 400 }] }),
+    ]),
+    [],
+    'a bpm outside 60-200 should be rejected'
+  );
+});
+
+test('any beat grid in the shipped content is ordered and in range', () => {
   const { LUVIZ } = loadSite();
   const gridded = LUVIZ.mixes.filter((m) => Array.isArray(m.beatGrid));
-  assert.ok(gridded.length > 0, 'at least one placeholder mix must carry a beatGrid');
   for (const mix of gridded) {
     let previous = -1;
     for (const [index, segment] of mix.beatGrid.entries()) {
@@ -214,11 +257,6 @@ test('a mix with a beatGrid has ordered, in-range segments', () => {
     }
     assert.equal(LUVIZ.validate.pulses(mix), true, mix.title + ' should pulse');
   }
-  const multiSegment = gridded.filter((m) => m.beatGrid.length > 1);
-  assert.ok(
-    multiSegment.length > 0,
-    'at least one placeholder mix must show a multi-segment beatGrid (KTD3)'
-  );
 });
 
 test('a mix with no beatGrid validates and is marked non-pulsing', () => {

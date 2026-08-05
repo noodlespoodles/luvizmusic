@@ -69,16 +69,6 @@ window.LUVIZ.crew = [
     ],
   },
 
-  {
-    name: 'Teodor Balan',
-    alias: 'TEO',
-    bio:
-      'Lights, room layout, and the door. Believes a dance floor is a building material ' +
-      'and treats it accordingly. Occasionally plays the first hour when nobody is looking.',
-    photo: 'assets/crew/teodor-balan.jpg',
-    links: [],
-  },
-
 ];
 
 /* Leave this last line alone. It tells the page this file loaded correctly. */

@@ -1,0 +1,304 @@
+/* =========================================================================
+   LUVIZMUSIC - base
+   U4. Element defaults, the two stocks as page grounds, focus rings, skip
+   links, the reveal contract, and the reduced-motion floor.
+
+   Everything here is site-wide and element-level. Anything that positions a
+   box belongs in layout.css; anything that dresses a named section belongs
+   in sections.css.
+
+   NO LITERAL COLOURS. Every colour in this file comes from css/tokens.css.
+   ========================================================================= */
+
+:root {
+
+  /* -----------------------------------------------------------------------
+     THE HEIGHTS OF THE FIXED CHROME.
+
+     These two numbers are the whole accessibility floor for fixed chrome
+     (R21). They drive body padding, scroll-padding, scroll-margin and the
+     focusin rescue in js/app.js, so a focused control can never end up
+     underneath the mark or the player bar.
+
+     They are declared once here, restated per breakpoint in layout.css, and
+     MEASURED at run time by js/app.js, which writes the real pixel height of
+     #masthead and #player-bar back onto :root. The CSS values are the
+     no-JavaScript truth; the measured values are the exact truth.
+
+     --player-h is 0 until U6 ships a player bar. Nothing here assumes one.
+     ----------------------------------------------------------------------- */
+
+  --nav-h: 5.5rem;
+  --player-h: 0px;
+
+  /* The clearance a focused or anchored element keeps from fixed chrome. */
+  --chrome-gap: var(--space-s);
+}
+
+
+/* -------------------------------------------------------------------------
+   1. Element defaults
+   ------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html {
+  /* An anchor jump must land BELOW the fixed mark, not behind it (R21). */
+  scroll-padding-top: calc(var(--nav-h) + var(--chrome-gap));
+  scroll-padding-bottom: calc(var(--player-h) + var(--chrome-gap));
+  -webkit-text-size-adjust: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: var(--ground-near-black);
+  color: var(--ink-bone);
+  font-size: var(--type-body);
+  font-style: var(--info-style);
+  font-weight: var(--info-weight);
+  line-height: var(--leading-body);
+
+  /*
+    The fixed chrome is out of flow, so the page has to reserve its space
+    itself. Without this the first line of the hero prints under the mark and
+    the last line of the contact section prints under the player bar.
+  */
+  padding-top: var(--nav-h);
+  padding-bottom: var(--player-h);
+}
+
+/*
+  Long words - a venue name, a mix title, a URL - break rather than push the
+  page sideways. R18 wants no horizontal overflow at 320px, and one unbroken
+  string is the usual way that promise gets broken.
+*/
+body,
+h1, h2, h3, h4,
+p, li, dd, dt, figcaption, a, button {
+  overflow-wrap: break-word;
+}
+
+h1, h2, h3, h4, p, figure, blockquote, dl, dd {
+  margin: 0;
+}
+
+ul, ol {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+img, svg, video {
+  display: block;
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+  /* An image that has not arrived yet prints as the stock, not as white. */
+  background-color: var(--ground-near-black);
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  letter-spacing: inherit;
+  background: none;
+  border: 0;
+  padding: 0;
+  cursor: pointer;
+}
+
+a {
+  color: inherit;
+  text-decoration-thickness: var(--rule-hair);
+  text-underline-offset: 0.22em;
+}
+
+a:hover {
+  text-decoration-thickness: var(--rule-thin);
+}
+
+::selection {
+  background-color: var(--red-bright);
+  color: var(--ground-near-black);
+}
+
+.on-bone ::selection {
+  background-color: var(--red-deep);
+  color: var(--ground-bone);
+}
+
+/* `hidden` must win over any display this stylesheet sets. */
+[hidden] {
+  display: none !important;
+}
+
+
+/* -------------------------------------------------------------------------
+   2. Focus (R21)
+   -------------------------------------------------------------------------
+   RED INK, ON EITHER STOCK.
+
+   U3 computed it: bone is invisible on the bone stock and near-black is
+   invisible on the near-black stock, while both reds clear 3:1 on BOTH
+   stocks. So the ring is red, and the only thing that changes between
+   grounds is WHICH red - bright on near-black, deep on bone. Anything
+   printed on the bone stock carries the .on-bone class and gets the deep
+   ring; that is the entire rule.
+
+   :focus-visible, not :focus, so a mouse click on a card does not draw a
+   ring nobody asked for - but keyboard focus always does.
+   ------------------------------------------------------------------------- */
+
+:focus-visible {
+  outline: var(--focus-ring-width) solid var(--focus-ring-on-dark);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.on-bone :focus-visible,
+.on-bone:focus-visible {
+  outline-color: var(--focus-ring-on-bone);
+}
+
+/*
+  Anything focusable keeps clear of the fixed chrome when it is scrolled to.
+  js/app.js additionally rescues an element that receives focus while already
+  underneath the chrome, which scroll-margin alone cannot fix.
+*/
+a,
+button,
+input,
+select,
+textarea,
+summary,
+[tabindex],
+[id] {
+  scroll-margin-top: calc(var(--nav-h) + var(--chrome-gap));
+  scroll-margin-bottom: calc(var(--player-h) + var(--chrome-gap));
+}
+
+/* main is a skip-link target, so it takes focus without joining the tab order. */
+#main:focus {
+  outline: none;
+}
+
+
+/* -------------------------------------------------------------------------
+   3. Skip links (R21)
+   -------------------------------------------------------------------------
+   Off-screen until focused, then a bone panel in the top-left corner, above
+   everything including the fixed mark. Not display: none, which would take
+   them out of the tab order and make them decorative.
+   ------------------------------------------------------------------------- */
+
+.skip-link {
+  position: fixed;
+  top: var(--space-2xs);
+  left: var(--space-2xs);
+  z-index: var(--layer-skip);
+  transform: translateY(-200%);
+  padding: var(--space-2xs) var(--space-s);
+  background-color: var(--ink-bone);
+  color: var(--ground-near-black);
+  border: var(--rule-thin) solid var(--ground-near-black);
+  font-size: var(--type-label);
+  font-weight: var(--info-weight-loud);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  text-decoration: none;
+}
+
+.skip-link:focus,
+.skip-link:focus-visible {
+  transform: translateY(0);
+  outline-color: var(--focus-ring-on-bone);
+}
+
+
+/* -------------------------------------------------------------------------
+   4. Utilities
+   ------------------------------------------------------------------------- */
+
+/* Read by assistive technology, never drawn. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Thinner ink coverage, not a different grey (see tokens.css). */
+.ink-quiet  { opacity: var(--ink-coverage-quiet); }
+.ink-ghost  { opacity: var(--ink-coverage-ghost); }
+
+
+/* -------------------------------------------------------------------------
+   5. The reveal contract
+   -------------------------------------------------------------------------
+   REVEAL TARGETS SHIP VISIBLE. There is no hiding class in the markup and
+   none in this file that applies on its own.
+
+   js/app.js adds .reveal--pending only AFTER an IntersectionObserver is
+   wired, and only to elements that are not already on screen; anything
+   already intersecting is marked .is-revealed on the spot. So if the
+   observer never runs - old browser, script error, JavaScript off - the
+   content stays visible instead of being hidden forever by CSS that ran
+   first.
+
+   U8 may take this over for its scroll scenes. The contract it must keep is
+   the one above: hidden only ever by script, never by stylesheet.
+   ------------------------------------------------------------------------- */
+
+.reveal--pending {
+  opacity: 0;
+  transform: translateY(var(--space-s));
+}
+
+.reveal--pending.is-revealed {
+  opacity: 1;
+  transform: none;
+  transition: opacity 620ms ease-out, transform 620ms ease-out;
+}
+
+
+/* -------------------------------------------------------------------------
+   6. The reduced-motion floor
+   -------------------------------------------------------------------------
+   Nothing moves, everything is still readable, nothing disappears. The
+   texture stays: css/texture.css freezes the grain rather than removing it.
+   ------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+
+  .reveal--pending,
+  .reveal--pending.is-revealed {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
+}

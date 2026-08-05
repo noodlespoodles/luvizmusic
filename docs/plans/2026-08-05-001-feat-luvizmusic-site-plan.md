@@ -81,6 +81,13 @@ The owner does not write code and will maintain the site himself between parties
 - R21. Every interactive control is keyboard reachable with a visible focus indicator that is never occluded by fixed chrome, and player state changes are announced to assistive technology.
 - R22. All statically authored text (headings, section copy, navigation, contact details) is present and readable with JavaScript disabled, and each content-driven list carries a `noscript` fallback naming what requires JavaScript.
 
+**Influences**
+
+- R26. The site presents the night's influences as a dense typographic field in which most names are deliberately not legible at rest.
+- R27. Names resolve into legibility when the visitor stops moving, and smear apart as movement increases, driven by the same intensity signal as every other effect.
+- R28. While a mix is playing, individual names snap to full contrast on beat boundaries, within R20's flash bounds and never across a large area.
+- R29. Every influence name is real text in source order, readable by assistive technology and legible in full under `prefers-reduced-motion: reduce`.
+
 **Delivery**
 
 - R23. The site runs from any static file server with no build step and no install.
@@ -105,7 +112,7 @@ The owner does not write code and will maintain the site himself between parties
 
 ### Open Questions
 
-- Deferred: "Raph Doug" in the owner's reference list is most likely **Ruf Dug** (Manchester, Ruf Kutz label), at roughly 80% confidence; no artist by the literal spelling exists on Discogs, RA, or SoundCloud. Affects tone only. Build to the Ruf Dug reading; the owner confirms later.
+- **Resolved.** "Raph Doug" was **Ruf Dug** (Manchester, Ruf Kutz), confirmed by his appearance in the owner's influences list. The Ruf Kutz reading of the art direction stands.
 - Deferred: whether the crew holds its own audio files for any mix. If yes, KTD14's self-hosted path removes both the activation relay and the beat-grid burden for those mixes.
 - Deferred: who runs U0's iOS device check, on what hardware and iOS version. The plan names it the largest risk; the owner names the tester.
 
@@ -291,7 +298,8 @@ stateDiagram-v2
 | U7 | Beat clock and intensity signal | `js/beat-clock.js`, `js/intensity.js` | U5 |
 | U8 | GSAP scroll choreography | `js/scene-plan.js`, `js/scenes.js`, `css/motion.css` | U4, U7 |
 | U9 | Section interactions | `js/cursor.js`, `js/marquee.js`, `js/marquee-model.js`, `js/pointer-mode.js`, `js/section-fx.js`, `css/section-fx.css` | U4, U7, U8 |
-| U10 | Owner handbook and content-swap guide | `README.md`, `content/README.md` | U0-U9 |
+| U11 | The influences wall | `content/influences.js`, `js/influences.js`, `css/influences.css` | U4, U7, U8 |
+| U10 | Owner handbook and content-swap guide | `README.md`, `content/README.md` | U0-U9, U11 |
 
 ### U0. iOS activation spike
 
@@ -663,6 +671,44 @@ stateDiagram-v2
 - Pointer resolution on a touch profile returns scroll-velocity mode, and both modes name the same intensity parameter (R17).
 
 **Verification:** `node --test` passes. Owner-verifiable: on a touch device the mix rail swipes and snaps, every desktop hover effect has a working tap equivalent, tab order reaches every card and control, and the marquee pauses on focus and on tap.
+
+### U11. The influences wall
+
+**Goal:** Build the typographic field of influence names: illegible at rest, resolving when the visitor stops, flashing on the beat.
+
+**Requirements:** R26, R27, R28, R29. Consumes KTD10's intensity signal and KTD3's beat clock; composes U3's misregistration primitives.
+
+**Dependencies:** U4, U7, U8.
+
+**Files:**
+- `content/influences.js` (already authored; ~95 names transcribed from the owner's list)
+- `index.html` (adds the `#influences` section and the one new content script tag; U4 is finished by this point so there is no contention)
+- `js/influences.js`, `css/influences.css`
+- `tests/influences.test.js`
+
+**Approach:**
+
+1. **The governing idea is crate-digging.** Movement smears, stillness resolves. A visitor flicking down the page sees a wall of red and bone plates too far out of register to read; when they stop, the plates converge and names snap into focus. This is the fixed-mark-over-degrading-field device (R4) applied to a whole section, and it is why the treatment is not a word cloud or a marquee.
+2. Render every name as real text in source order (R29). Decorative offset plates are duplicates marked `aria-hidden="true"`.
+3. Compose the field with grid overlap (`grid-area: 1/1`) across three or four depth layers, each at a different scale band, from small caption-scale up to names that bleed past the viewport edge. Vary rotation slightly. Do not randomise per load — a stable layout is art-directed; a shuffling one is noise.
+4. **Legibility is a function of `intensity.amount`, inverted.** At `amount` 0 the red and bone plates sit in register and names are fully legible; as `amount` rises the plates separate along `intensity.x`/`y` and blur toward illegibility. Use U3's `.misreg` primitives rather than new ones. Cap the maximum separation so the section never becomes a meaningless smear.
+5. **Beat flashes (R28).** On each beat boundary from `js/beat-clock.js`, snap a small deterministic rotation of names to full contrast for one beat. Constraints that are not negotiable: at most a handful of names at once, each a small area, never a full-viewport change, and the rate is already bounded at 2.5/sec by U7's subdivision. No name flashes red-on-red.
+6. Parallax the depth layers off `intensity.x`/`y` so the field has real depth on both pointer and touch, through the one signal (R17).
+7. Use SplitText for the per-line treatment on resolved names, which is what it was pinned for in KTD2.
+8. **Under `prefers-reduced-motion: reduce`, the wall renders as a clean, fully legible, statically laid-out list** (R29). The names are the content; the treatment is the decoration, so the fallback keeps the content and drops the treatment.
+9. On touch, `intensity.x` is 0 by contract, so horizontal separation must not be the only legibility cue — drive the vertical axis and opacity as well, or the effect flattens on phones.
+
+**Test scenarios** (`tests/influences.test.js`, against a pure layout/legibility module — no DOM):
+- Every name in `content/influences.js` appears exactly once in the generated layout.
+- Legibility is monotonic in `amount`: higher intensity never produces a more legible plate offset than lower.
+- At `amount` 0 the plate offset is zero, so names are fully in register.
+- Plate separation is clamped at a stated maximum regardless of input magnitude.
+- The layout is deterministic: the same input list produces the same layout across runs.
+- The beat-flash selector returns at most the stated maximum names per boundary and never the same name twice in consecutive boundaries.
+- Under reduced motion the module reports the static legible layout and zero offsets.
+- A name containing an apostrophe survives the pipeline unescaped.
+
+**Verification:** `node --test` passes. Owner-verifiable: the wall is unreadable while scrolling and readable within a moment of stopping; with a mix playing, names flash on the beat; at 320px names still bleed the edges rather than shrinking to timidity; under reduced motion the full list is plainly readable.
 
 ### U10. Owner handbook and content-swap guide
 
