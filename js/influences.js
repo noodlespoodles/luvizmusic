@@ -62,7 +62,7 @@
     { id: 'ghost', step: '--step-n1', depth: 0.14, ink: 'red',  weight: 'hairline', bleed: false, flash: false },
     { id: 'field', step: '--step-0',  depth: 0.32, ink: 'bone', weight: 'regular',  bleed: false, flash: true },
     { id: 'near',  step: '--step-2',  depth: 0.62, ink: 'bone', weight: 'bold',     bleed: false, flash: true },
-    { id: 'bleed', step: '--step-5',  depth: 1.00, ink: 'red',  weight: 'heavy',    bleed: true,  flash: false }
+    { id: 'bleed', step: '--step-6',  depth: 1.00, ink: 'red',  weight: 'heavy',    bleed: true,  flash: false }
   ];
 
   /* The single band the wall collapses to under prefers-reduced-motion. */

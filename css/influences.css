@@ -86,7 +86,13 @@
   transform:
     translate3d(calc(var(--wall-px) * var(--depth, 0)), calc(var(--wall-py) * var(--depth, 0)), 0)
     rotate(var(--rot, 0deg));
-  will-change: transform;
+
+  /*
+    DELIBERATELY NO will-change HERE. U8's budget is three concurrently
+    promoted elements; ninety-two would be ninety-two compositor layers and
+    would cost far more than the hint buys. translate3d already keeps the
+    transform off the main thread.
+  */
 }
 
 /* The three impressions, stacked in one cell: red plate, bone plate, and the
@@ -184,7 +190,6 @@
 /* SplitText's per-line wrapper on the resolved names in the bleeding band. */
 .influences__line {
   display: block;
-  will-change: transform;
 }
 
 /* -------------------------------------------------------------------------
@@ -278,7 +283,6 @@
     line-height: var(--leading-body);
     opacity: var(--ink-coverage-full);
     white-space: normal;
-    will-change: auto;
   }
 
   .influences__true {
@@ -304,7 +308,8 @@
     min-block-size: 175vh;
   }
 
-  .influences__name--bleed {
-    font-size: var(--step-4);
-  }
+  /* The bleeding band is NOT stepped down here. --step-6 already scales with
+     the viewport, and at 320px it still draws names wider than the screen -
+     which is the point. Shrinking them to fit would trade the whole idea for
+     tidiness, and the section clips them anyway. */
 }
