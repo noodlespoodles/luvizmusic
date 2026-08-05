@@ -100,6 +100,22 @@
     figure.classList.remove('duotone', 'duotone--bright', 'duotone--bone');
     figure.classList.add('media--fallback');
     figure.setAttribute('aria-hidden', 'true');
+
+    /* A cover drawn from the title, rather than a tile announcing an absence.
+       Deterministic, so it does not change under the visitor between visits.
+       js/mix-art.js is loaded before this file; the type-only tile below is
+       the fallback's fallback if it ever is not. */
+    var art = window.LUVIZ && window.LUVIZ.mixArt;
+    if (art && typeof art.cover === 'function') {
+      var img = el('img');
+      img.className = 'media__img media__img--generated';
+      img.alt = '';
+      img.setAttribute('aria-hidden', 'true');
+      img.src = art.cover(label).dataUri;
+      figure.appendChild(img);
+      return;
+    }
+
     figure.appendChild(el('span', 'media__initials', initialsOf(label)));
     figure.appendChild(el('span', 'media__note', 'No picture yet'));
   }

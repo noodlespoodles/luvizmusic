@@ -27,6 +27,13 @@
    * links can be an empty list [] if someone has no public profiles.
    ========================================================================== */
 
+/* --------------------------------------------------------------------------
+   THE PHOTOS ARE REAL. The BIOS ARE NOT: they still describe the invented
+   people the site was scaffolded with, and only the names and photos have
+   been swapped. Rewrite each bio in your own words when you get a chance.
+   Nothing else needs changing when you do.
+   -------------------------------------------------------------------------- */
+
 window.LUVIZ.crew = [
 
   {
@@ -36,10 +43,9 @@ window.LUVIZ.crew = [
       'Started the night in a rented rehearsal room with two decks and a borrowed sub. ' +
       'Plays the long middle stretch: disco edits into unquantised house, always on the beat, ' +
       'never on the nose.',
-    photo: 'assets/crew/ama-dwomoh.jpg',
+    photo: 'assets/crew/ben-vorster.jpg',
     links: [
-      { label: 'SoundCloud', url: 'https://soundcloud.com/luviz' },
-      { label: 'Instagram', url: 'https://instagram.com/luviz' },
+      /* Add Ben's links here. */
     ],
   },
 
@@ -50,9 +56,10 @@ window.LUVIZ.crew = [
       'Sound engineer by trade, resident by accident. Tunes the room before every night ' +
       'and opens it once the tuning is done. Keeps a running list of records that only ' +
       'work on a properly aligned system.',
-    photo: 'assets/crew/ruben-castellanos.jpg',
+    photo: 'assets/crew/greg-canning.jpg',
     links: [
-      { label: 'Mixcloud', url: 'https://mixcloud.com/panorama' },
+      { label: 'SoundCloud', url: 'https://soundcloud.com/gregcanning' },
+      { label: 'Bookings', url: 'mailto:info@onenationrecords.co.za' },
     ],
   },
 
@@ -61,11 +68,10 @@ window.LUVIZ.crew = [
     alias: 'DJ Kerry Gold',
     bio:
       'Closes. Trained on gospel organ, which is audible about four hours in. ' +
-      'Has never once played a record she could not explain the reason for.',
-    photo: 'assets/crew/ines-okonkwo.jpg',
+      'Has never once played a record they could not explain the reason for.',
+    photo: 'assets/crew/donovan-pugh.jpg',
     links: [
-      { label: 'Resident Advisor', url: 'https://ra.co/dj/sisterfreq' },
-      { label: 'Bandcamp', url: 'https://sisterfreq.bandcamp.com' },
+      /* Add Donovan's links here. */
     ],
   },
 

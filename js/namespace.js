@@ -161,8 +161,11 @@
       }
       if (!isFilledString(link.url)) {
         errors.push(where + ': link ' + (i + 1) + ' has no url.');
-      } else if (!/^https?:\/\//i.test(link.url)) {
-        errors.push(where + ': link ' + (i + 1) + ' url should start with https://');
+      } else if (!/^(https?:\/\/|mailto:)/i.test(link.url)) {
+        errors.push(
+          where + ': link ' + (i + 1) +
+          ' url should start with https:// , or mailto: for a booking address'
+        );
       }
     }
   }

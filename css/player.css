@@ -1,0 +1,554 @@
+/* =========================================================================
+   LUVIZMUSIC - player
+   U6. The persistent transport, the housing for foreign provider chrome,
+   and the mix cards once the player has claimed them.
+
+   NO LITERAL COLOURS. Every colour comes from css/tokens.css.
+
+   NO backdrop-filter ANYWHERE IN THIS FILE (KTD12). On a position: fixed
+   element it repaints the blurred region on every scroll frame and is a
+   known severe jank source on iOS Safari. The ground is opaque instead,
+   which is also the only thing that reliably keeps the transport legible
+   over a moving grain field.
+
+   -------------------------------------------------------------------------
+   THE DRAWER OVERLAYS. IT DOES NOT PUSH. Stated here because it is the one
+   layout decision in this unit that a reader will want to check.
+
+   .player__stage is positioned ABSOLUTELY against the bar, so it takes no
+   part in the bar's height. --player-h therefore measures the transport
+   strip alone, at every breakpoint, and the provider panel floats over the
+   page above it.
+
+   The alternative - reserving space for the panel - was rejected. At 320px a
+   200x200 YouTube drawer is a third of the viewport; adding and removing
+   that from the document flow whenever the visitor changes mix would reflow
+   the page under the thing they are reading and invalidate every
+   ScrollTrigger position U8 measured. An overlay costs some covered content
+   at the bottom of the screen. A push costs the visitor their place.
+   ========================================================================= */
+
+/* -------------------------------------------------------------------------
+   1. The bar
+   ------------------------------------------------------------------------- */
+
+.player {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: var(--layer-player);
+
+  background-color: var(--ground-near-black);
+  color: var(--ink-bone);
+  border-top: var(--rule-thick) solid currentColor;
+
+  /* Home-screen web apps and notched phones. The strip keeps its own
+     padding above the system inset rather than sitting under it. */
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.player__strip {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "transport now"
+    "seek      seek";
+  align-items: center;
+  gap: var(--space-2xs) var(--space-s);
+  padding: var(--space-2xs) var(--gutter);
+}
+
+.player__transport {
+  grid-area: transport;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+}
+
+.player__now {
+  grid-area: now;
+  min-width: 0;
+}
+
+.player__meter--seek { grid-area: seek; }
+
+/*
+  The volume meter is off at the base band and on from 600px up. This is a
+  BREAKPOINT decision, never a provider one: R15a's rule is that the bar must
+  not change shape when the provider's capabilities change, and it does not -
+  at every width, a provider that refuses volume renders the same box as one
+  that allows it. Phones have hardware volume keys; two rows of chrome at
+  320px cost more than the slider is worth.
+*/
+.player__meter--volume {
+  grid-area: volume;
+  display: none;
+}
+
+/* -------------------------------------------------------------------------
+   2. Buttons
+   ------------------------------------------------------------------------- */
+
+.player__button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  padding: var(--space-2xs) var(--space-xs);
+  border: var(--rule-thin) solid currentColor;
+  border-radius: var(--radius-0);
+  background-color: var(--ink-bone);
+  color: var(--ground-near-black);
+  /* A comfortable target on a phone without making the strip taller. */
+  min-height: 2.75rem;
+  white-space: nowrap;
+}
+
+.player__button:hover {
+  background-color: var(--red-bright);
+}
+
+.player__button[disabled] {
+  cursor: not-allowed;
+  opacity: var(--ink-coverage-quiet);
+}
+
+.player__button[disabled]:hover {
+  background-color: var(--ink-bone);
+}
+
+.player__glyph {
+  font-size: var(--type-caption);
+  line-height: 1;
+}
+
+/* -------------------------------------------------------------------------
+   3. What is on, and what state it is in
+   ------------------------------------------------------------------------- */
+
+.player__line {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2xs);
+  min-width: 0;
+}
+
+.player__chip {
+  flex: 0 0 auto;
+}
+
+.player__title {
+  min-width: 0;
+  font-style: var(--voice-style);
+  font-weight: var(--voice-weight-quiet);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/*
+  THE COPY IS THE POINT. Loading, Unavailable, Blocked and the native
+  fallback all say something here; a player that goes quiet in those states
+  is indistinguishable, to the visitor, from a button that does nothing.
+*/
+.player__note {
+  margin-top: var(--space-3xs);
+  opacity: var(--ink-coverage-quiet);
+}
+
+/* Refused and dead states raise their own voice rather than staying grey. */
+.player[data-state="Blocked"] .player__note,
+.player[data-state="Unavailable"] .player__note,
+.player[data-state="NativeFallback"] .player__note {
+  opacity: var(--ink-coverage-full);
+  color: var(--red-bright);
+}
+
+/* -------------------------------------------------------------------------
+   4. The two meters (R15a)
+   -------------------------------------------------------------------------
+   ONE SET OF BOXES SERVES BOTH CASES. A rail that can be dragged and a rail
+   that only reports position are the same size, the same weight and in the
+   same place; only the cursor, the tab stop and the ARIA contract differ.
+   Mixcloud can refuse to scrub mid-session, and a control that collapsed
+   when that happened would jump the whole strip under the visitor's finger.
+   ------------------------------------------------------------------------- */
+
+.player__meter {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2xs);
+  min-width: 0;
+}
+
+.player__time,
+.player__meter-label {
+  flex: 0 0 auto;
+  opacity: var(--ink-coverage-quiet);
+  /* Fixed room for h:mm:ss so the rail does not shuffle sideways as the
+     numbers tick over, and does not jump when a mix passes the hour. */
+  min-width: 4.5ch;
+  text-align: center;
+}
+
+.player__rail {
+  position: relative;
+  flex: 1 1 auto;
+  min-width: 0;
+  /* A generous hit area at both settings, so the geometry is identical. */
+  height: 1.5rem;
+  touch-action: none;
+}
+
+.player__rail::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: var(--rule-thin);
+  margin-top: calc(var(--rule-thin) / -2);
+  background-color: currentColor;
+  opacity: var(--ink-coverage-ghost);
+}
+
+.player__fill {
+  position: absolute;
+  left: 0;
+  top: 50%;
+  height: var(--rule-thick);
+  margin-top: calc(var(--rule-thick) / -2);
+  width: calc(var(--fill, 0) * 100%);
+  background-color: var(--red-bright);
+}
+
+.player__thumb {
+  position: absolute;
+  top: 50%;
+  left: calc(var(--fill, 0) * 100%);
+  width: var(--space-2xs);
+  height: var(--space-s);
+  margin: calc(var(--space-s) / -2) 0 0 calc(var(--space-2xs) / -2);
+  background-color: var(--ink-bone);
+}
+
+.player__rail[data-interactive="true"] {
+  cursor: pointer;
+}
+
+/*
+  The read-only rail. NOTHING ABOUT ITS SIZE CHANGES - the thumb stays,
+  because it is still an honest position marker; only its ink thins, which
+  is how the rest of the site says "not a control" (see .ink-quiet).
+*/
+.player__rail[data-interactive="false"] {
+  cursor: default;
+}
+
+.player__rail[data-interactive="false"] .player__thumb,
+.player__rail[data-interactive="false"] .player__fill {
+  opacity: var(--ink-coverage-quiet);
+}
+
+/* -------------------------------------------------------------------------
+   5. The housing for foreign chrome (R5a, R13, KTD5)
+   -------------------------------------------------------------------------
+   A provider's embed cannot be restyled and cannot be hidden, so it is given
+   a compartment instead: U3's ruled, labelled panel, with the provider's
+   name on the rule. Framed, it reads as a deliberate part of the design.
+   Unframed, it reads as somebody else's interface leaking in.
+   ------------------------------------------------------------------------- */
+
+.player__stage {
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  right: 0;
+  /* The panel's own border draws the top; the bar's border draws the base. */
+  border-bottom: 0;
+  padding: var(--space-m) var(--gutter) var(--space-2xs);
+  background-color: var(--ground-near-black);
+  color: var(--ink-bone);
+}
+
+.player__stage-label {
+  left: var(--gutter);
+  background-color: var(--ground-near-black);
+}
+
+/*
+  EVERY FRAME EVER BUILT LIVES HERE, AND NONE OF THEM IS EVER display: none
+  (KTD5). Browsers deprioritise unrendered iframes, and a Permissions Policy
+  to pause their media is still in flight - so the frame that is not current
+  is stacked behind the one that is, still laid out, still rendered, just not
+  painted and not reachable.
+*/
+.player__mount {
+  position: relative;
+  width: 100%;
+  overflow: hidden;
+}
+
+.player__mount > * {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.player__mount > [data-current="true"] {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/*
+  SoundCloud and Mixcloud: clipped to nothing in the normal case.
+
+  These providers place no visibility requirement on their embed, and showing
+  it means the visitor faces two play buttons for one mix - the provider's and
+  ours - which reads as a bug. Ours is the control; the embed is the engine.
+
+  It is NOT display:none and NOT removed: browsers deprioritise unrendered
+  iframes and a Permissions Policy to pause their media is in flight, so it
+  stays laid out and rendered at a hairline, just not looked at.
+
+  The provider's own control is only ever needed when R12a's fallback fires,
+  which is the rule below - so it appears exactly when it becomes useful.
+*/
+.player__stage[data-shape="strip"] {
+  padding-block: 0;
+}
+
+.player__stage[data-shape="strip"] .player__stage-label {
+  /* Nothing is on show, so a label naming the provider points at an empty
+     box. The credit line under the bar already says whose mix this is. */
+  display: none;
+}
+
+.player__stage[data-shape="strip"] .player__mount {
+  height: 1px;
+  opacity: 0.01;
+}
+
+/*
+  YouTube: a drawer. R13 and YouTube's own Developer Policies want a visible
+  player of at least 200x200 CSS pixels - the policy forbids, verbatim,
+  playing "from a background player, meaning a player that is not displayed
+  in the page, tab, or screen that the user is viewing". clamp()'s lower
+  bound is what guarantees the 200px floor at every viewport.
+*/
+.player__stage[data-shape="drawer"] .player__mount {
+  height: clamp(200px, 30vh, 260px);
+  min-width: 200px;
+}
+
+/* R12a. When the fallback is live, the panel is where the visitor is being
+   sent, so the panel says so in red rather than waiting to be noticed. */
+.player__stage[data-fallback="true"] {
+  border-color: var(--red-bright);
+  color: var(--red-bright);
+}
+
+.player__stage[data-fallback="true"] .player__mount {
+  /* The fallback is the one moment the provider's own control has to be
+     reachable, so the hairline clip above is overridden here and only here. */
+  height: 3.75rem;
+  min-height: 3.75rem;
+  opacity: 1;
+}
+
+.player__native {
+  margin-top: var(--space-2xs);
+  color: var(--red-bright);
+}
+
+/* -------------------------------------------------------------------------
+   6. Attribution and the source link (R5a, R14)
+   -------------------------------------------------------------------------
+   SoundCloud's terms require the uploader credited, the mark shown and a
+   link back. The other providers get the same courtesy at the same size:
+   discreet, inside the panel, never the card's main event.
+   ------------------------------------------------------------------------- */
+
+.player__attribution {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-3xs) var(--space-2xs);
+  margin-top: var(--space-2xs);
+  opacity: var(--ink-coverage-quiet);
+}
+
+.player__mark {
+  display: inline-flex;
+  align-items: center;
+  height: var(--space-s);
+}
+
+.player__mark svg {
+  height: 100%;
+  width: auto;
+  fill: currentColor;
+}
+
+.player__source {
+  text-decoration-thickness: var(--rule-hair);
+}
+
+/* -------------------------------------------------------------------------
+   7. The mix cards, once the player has claimed them
+   -------------------------------------------------------------------------
+   THESE RULES ARE IN THIS FILE, NOT IN sections.css, ON PURPOSE. They are
+   the player's behaviour attached to somebody else's markup: js/sections.js
+   ships a card whose only action is a link out to the provider, and
+   js/player-bar.js replaces that with an in-page play trigger at run time.
+   Every selector below is gated on [data-cue="true"], which only the player
+   ever sets - so with JavaScript off, or over file:// where no provider
+   handshake can succeed, none of this applies and the card keeps the plain
+   link it shipped with.
+   ------------------------------------------------------------------------- */
+
+.mix-card[data-cue="true"] {
+  position: relative;
+  cursor: pointer;
+}
+
+.mix-card__transport {
+  margin-top: var(--space-2xs);
+}
+
+.mix-card__cue {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-3xs);
+  padding: var(--space-2xs) var(--space-xs);
+  min-height: 2.75rem;
+  border: var(--rule-thin) solid currentColor;
+  border-radius: var(--radius-0);
+  background-color: transparent;
+  color: inherit;
+}
+
+/*
+  THE WHOLE CARD IS THE BUTTON. One real <button>, one tab stop, one
+  accessible name, and Enter and Space for free - rather than a <li> wearing
+  role="button" and a hand-rolled key handler. The link out was removed from
+  the card by js/player-bar.js before this was stretched over it, so there is
+  nothing underneath for it to swallow.
+*/
+.mix-card__cue::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  /* Above the artwork, which is itself positioned. Without this the hit
+     area would stop at the top of the image on some paint orders. */
+  z-index: var(--layer-raised);
+}
+
+.mix-card[data-cue="true"]:hover .mix-card__cue {
+  background-color: var(--red-bright);
+  color: var(--ground-near-black);
+  border-color: var(--red-bright);
+}
+
+/*
+  The focus ring belongs on the card, because the card is the hit area. The
+  ring on the button itself is the fallback for a browser without :has(),
+  so focus is never invisible.
+*/
+.mix-card[data-cue="true"]:has(.mix-card__cue:focus-visible) {
+  outline: var(--focus-ring-width) solid var(--focus-ring-on-dark);
+  outline-offset: var(--focus-ring-offset);
+}
+
+.mix-card__cue[disabled] {
+  cursor: wait;
+  opacity: var(--ink-coverage-quiet);
+}
+
+/* The mix the transport is pointed at, marked on the card as well as in the
+   bar, so the two never disagree about what is loaded. */
+.mix-card[data-active="true"] {
+  box-shadow: inset var(--rule-thick) 0 0 0 var(--red-bright);
+}
+
+.mix-card[data-active="true"] .mix-card__cue {
+  border-color: var(--red-bright);
+  color: var(--red-bright);
+}
+
+.mix-card[data-active="true"]:hover .mix-card__cue {
+  color: var(--ground-near-black);
+}
+
+/* -------------------------------------------------------------------------
+   8. Breakpoints
+   ------------------------------------------------------------------------- */
+
+@media (min-width: 600px) {
+
+  .player__strip {
+    grid-template-columns: auto minmax(8rem, 14rem) minmax(0, 1fr) minmax(6rem, 9rem);
+    grid-template-areas: "transport now seek volume";
+    gap: var(--space-s);
+    padding: var(--space-2xs) var(--gutter);
+  }
+
+  .player__meter--volume {
+    display: flex;
+  }
+
+  /* The strip stays clipped at every width. It only opens for the R12a
+     fallback, and that rule carries its own height. Giving it room here
+     put a second, dead play button above the real one. */
+  .player__stage[data-shape="strip"][data-fallback="true"] .player__mount {
+    height: 5rem;
+  }
+
+}
+
+@media (min-width: 1024px) {
+
+  .player__strip {
+    grid-template-columns: auto minmax(12rem, 20rem) minmax(0, 1fr) minmax(8rem, 11rem);
+    max-width: var(--page-max);
+    margin-inline: auto;
+  }
+
+  .player__stage {
+    padding-inline: var(--gutter);
+  }
+
+}
+
+/* -------------------------------------------------------------------------
+   9. Reduced motion
+   -------------------------------------------------------------------------
+   There is nothing here to freeze: the transport animates nothing, the fill
+   moves because the position moved, and the panel does not slide. This block
+   exists to record that, so the next reader does not go looking for the
+   transition that is not there.
+   ------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+
+  .player,
+  .player__stage {
+    transition: none;
+  }
+
+}
+
+/* When the fallback fires on a strip provider, the panel becomes visible
+   chrome again: it needs its padding and its label back, because now there
+   IS something in it and the visitor is being pointed at it. */
+.player__stage[data-shape="strip"][data-fallback="true"] {
+  padding-block: var(--space-m) var(--space-2xs);
+}
+
+.player__stage[data-shape="strip"][data-fallback="true"] .player__stage-label {
+  display: block;
+}

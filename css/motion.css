@@ -1,0 +1,257 @@
+/* =========================================================================
+   LUVIZMUSIC - motion
+   U8. The classes the scene code animates, and their resting state.
+
+   THIS FILE IS THE RESTING STATE, NOT THE ANIMATION. Every rule here
+   describes what an element looks like when nothing is moving it. The
+   movement itself lives in js/scenes.js, driven by the descriptors in
+   js/scene-plan.js. That split is what makes a blocked CDN survivable: if
+   the library never arrives, the resting state IS the page, and it is
+   already correct.
+
+   THREE HTML-LEVEL FLAGS, SET BY js/scenes.js
+
+     html.motion-on   scenes were built: the library is here and the
+                      visitor has not asked for less motion. Everything
+                      that exists only to be animated is gated on this, so
+                      it never appears on a page that will not animate it.
+
+     html.no-gsap     the library did not load. The page is static and
+                      readable, and the cursor is the browser's own.
+
+     (neither)        reduced motion, or a page that has not booted yet.
+                      Nothing here applies and css/sections.css stands.
+
+   WHAT IS DELIBERATELY ABSENT
+
+   content-visibility. Not on a section, not on a card, not anywhere. The
+   scroll library's own documentation states that content-visibility: auto
+   behaves like display: none for measurement, which makes trigger
+   positions uncomputable, and a filed issue records it breaking pinning
+   from a sibling element (KTD12). The paint saving is not worth a page
+   whose triggers are silently wrong.
+
+   backdrop-filter. Ruled out on fixed chrome for the same KTD12 reason:
+   it repaints the blurred region every scroll frame and is a known severe
+   jank source on iOS Safari.
+
+   NO LITERAL COLOURS. Every colour comes from css/tokens.css, or from
+   currentColor so the rule inherits whichever ink the stock demands.
+   ========================================================================= */
+
+
+/* =========================================================================
+   1. THE GUARD: A PAGE WITH NO LIBRARY
+   -------------------------------------------------------------------------
+   The whole degraded state, in one rule. Content is untouched because
+   nothing was ever put into a start state, so all that is left to do is
+   hand the cursor back to the browser in case a later unit replaced it.
+   The selector is deliberately more specific than a single class so it
+   still wins over a stylesheet loaded after this one.
+   ========================================================================= */
+
+html.no-gsap,
+html.no-gsap body {
+  cursor: auto;
+}
+
+
+/* =========================================================================
+   2. THE HERO IS THE SCRUB STAGE
+   -------------------------------------------------------------------------
+   The wordmark's bleed is scrubbed across the hero's own height, so the
+   hero needs a viewport's worth of travel to run through. It is measured
+   in svh - the SMALL viewport height, the one with the mobile address bar
+   showing - because svh is the only viewport unit that does not change
+   when that bar shows and hides. dvh would change constantly during a
+   scroll and resize the trigger under the visitor's finger, which is the
+   same problem ignoreMobileResize exists to absorb; the old bare viewport
+   unit has exactly the same fault.
+
+   min-height, not height: where the hero's own words are already taller
+   than the screen, at 320px with a long blurb, the words win.
+   ========================================================================= */
+
+html.motion-on .section--hero {
+  min-height: 100svh;
+}
+
+
+/* =========================================================================
+   3. SPLIT LINES
+   -------------------------------------------------------------------------
+   The per-line display reveals wrap each line in one of these for a few
+   hundred milliseconds and then unwrap it again. The resting state is a
+   plain block that has been moved by nothing, so a reveal that is
+   interrupted half way leaves readable type rather than a stranded line.
+   ========================================================================= */
+
+.scene-line {
+  display: block;
+  transform: none;
+  opacity: 1;
+}
+
+
+/* =========================================================================
+   4. THE WILL-CHANGE BUDGET
+   -------------------------------------------------------------------------
+   will-change hands an element its own compositor layer. That is exactly
+   what a long-lived scrubbed transform wants and exactly what forty cards
+   at once do not: enough of them and the browser runs out of memory for
+   layers and everything gets slower, which is the opposite of the point.
+
+   js/scenes.js adds this class to at most WILL_CHANGE_BUDGET elements at a
+   time, and only to the scrubbed ones, which are the only elements that
+   move continuously. The one-shot reveals do not qualify.
+   ========================================================================= */
+
+html.motion-on .is-moving {
+  will-change: transform;
+}
+
+
+/* =========================================================================
+   5. THE DRAWN RULE ON A DATE
+   -------------------------------------------------------------------------
+   A ruled box that draws itself in has to draw a rule, and a border cannot
+   be drawn with a transform. So while motion is on, the row's own hairline
+   is made transparent and an identical hairline is drawn as a pseudo
+   element sitting exactly on top of it, scaled from its left end by
+   --rule-draw.
+
+   AT REST THE TWO ARE INDISTINGUISHABLE: same weight, same ink, same
+   place. With the library blocked or reduced motion on, this whole section
+   never applies and the original border stands untouched.
+   ========================================================================= */
+
+html.motion-on .event {
+  position: relative;
+  --rule-draw: 1;
+  border-bottom-color: transparent;
+}
+
+html.motion-on .event::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(var(--rule-hair) * -1);
+  height: var(--rule-hair);
+  background-color: currentColor;
+  transform: scaleX(var(--rule-draw, 1));
+  transform-origin: left center;
+  pointer-events: none;
+}
+
+
+/* =========================================================================
+   6. THE REDUCED-MOTION FLOOR
+   -------------------------------------------------------------------------
+   Under reduce, js/scenes.js builds no scene at all and sets the final
+   states in one pass instead. These rules are the same answer written in
+   CSS, so the page is correct even in the moment before that pass runs and
+   correct forever if the boot never happens.
+
+   The texture keeps its grain and drops its flicker; css/texture.css owns
+   that. Nothing here removes anything a visitor came to read.
+   ========================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  :root {
+    --grain-swell: 1;
+    --misreg-x: 2px;
+    --misreg-y: 1px;
+  }
+
+  .scene-line {
+    transform: none;
+    opacity: 1;
+  }
+
+  .event {
+    --rule-draw: 1;
+  }
+
+  .is-moving {
+    will-change: auto;
+  }
+
+}
+
+/* -------------------------------------------------------------------------
+   NAV ARRIVAL (js/nav-transition.js)
+
+   Punctuation, not decoration: the heading's colour plates pull apart and
+   snap back into register, which is the same misregistration device the crew
+   cards use, fired once on arrival so you know the page moved you somewhere.
+
+   Transform and opacity only, one short burst, well under R20's flash bound
+   and nowhere near a large-area luminance change.
+   ------------------------------------------------------------------------- */
+
+.is-arriving {
+  animation: luviz-arrive 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.is-arriving::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  animation: luviz-arrive-plate 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes luviz-arrive {
+  0%   { transform: translate3d(-0.6rem, 0, 0); opacity: 0.55; }
+  55%  { transform: translate3d(0.14rem, 0, 0); opacity: 1; }
+  100% { transform: translate3d(0, 0, 0);       opacity: 1; }
+}
+
+@keyframes luviz-arrive-plate {
+  0%   { box-shadow: 0.5rem 0 0 var(--red-bright); opacity: 1; }
+  60%  { box-shadow: 0.1rem 0 0 var(--red-bright); opacity: 0.7; }
+  100% { box-shadow: 0 0 0 transparent;            opacity: 0; }
+}
+
+/* The whole effect is motion. Under reduce it does not exist: the section is
+   simply there, which is what the visitor asked for. */
+@media (prefers-reduced-motion: reduce) {
+  .is-arriving,
+  .is-arriving::after {
+    animation: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   ...AND IF IT CLAIMS A VIEWPORT, IT USES ONE.
+
+   The rule above gives the hero a full screen so the wordmark bleed has
+   travel to scrub through. On its own that left every word stacked at the
+   top with a third of the screen empty beneath, which reads as a bug rather
+   than as space.
+
+   So the hero's inner column distributes instead: the mark and the words sit
+   optically high, and the jump to the dates is pushed to the foot by the
+   auto margin, where it doubles as the cue that there is more below. The
+   height becomes composition rather than a gap.
+
+   Scoped to .motion-on, exactly like the min-height it corrects, so the
+   no-JS and reduced-motion page keeps its plain stacked hero.
+   ------------------------------------------------------------------------- */
+
+html.motion-on .section--hero .hero__inner {
+  display: flex;
+  flex-direction: column;
+  min-height: inherit;
+}
+
+html.motion-on .section--hero .hero__blurb {
+  /* The words stop here; everything below is the foot. */
+  margin-bottom: var(--space-l);
+}
+
+html.motion-on .section--hero .hero__jump {
+  margin-top: auto;
+}

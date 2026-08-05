@@ -31,9 +31,9 @@ window.LUVIZ.site = {
 
   /* A short paragraph. Two or three sentences reads best. */
   blurb:
-    'LUVIZMUSIC is a roaming night in the Paradise Garage lineage: ' +
-    'long sets, loud lows, and a floor that is treated as an instrument. ' +
-    'No guest-list theatre, no phones at the front, no records played to be filmed.',
+    'LUVIZMUSIC is a roaming night put on by some absurdly music-obsessed ' +
+    'people. Let the music envelop and cleanse you. No preconceptions. ' +
+    'No prescriptions. Just goosebumps.',
 
   /* Bookings and press go here. It becomes a clickable mailto link. */
   contactEmail: 'bookings@luvizmusic.example',

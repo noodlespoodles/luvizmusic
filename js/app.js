@@ -444,6 +444,12 @@
 
     /* A hash typed into the address bar later still lands correctly. */
     global.addEventListener('hashchange', resolveHash);
+
+    /* Nav clicks travel rather than jump (js/nav-transition.js). Guarded like
+       every other later-unit global, so a missing file cannot stop the boot. */
+    if (LUVIZ.navTransition && typeof LUVIZ.navTransition.attach === 'function') {
+      LUVIZ.navTransition.attach(document);
+    }
   }
 
   if (document.readyState === 'loading') {

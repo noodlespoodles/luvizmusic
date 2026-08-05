@@ -3,8 +3,9 @@
    The recorded sets. One block in { curly brackets } per mix, in the order
    you want them to appear.
    --------------------------------------------------------------------------
-   EVERY MIX BELOW IS INVENTED PLACEHOLDER CONTENT. The links point at
-   addresses that do not exist yet. Paste in your real share links.
+   THESE ARE THE REAL MIXES, pulled from mixcloud.com/raboobi. The cover
+   images have been downloaded into assets/mixes/ so the site does not depend
+   on Mixcloud staying up to show them.
    --------------------------------------------------------------------------
    HOW TO EDIT THIS FILE SAFELY
 
@@ -63,7 +64,8 @@
 
      NO BEAT GRID AT ALL IS A VALID CHOICE. Leave the beatGrid line out and
      that mix simply does not pulse - the page stays still rather than
-     pulsing at the wrong speed. See the Mixcloud entry below.
+     pulsing at the wrong speed. None of the mixes below has one yet, so
+     nothing pulses at the moment.
    ========================================================================== */
 
 window.LUVIZ.mixes = [
@@ -83,6 +85,7 @@ window.LUVIZ.mixes = [
     title: 'Shadowmixer 0321',
     provider: 'mixcloud',
     url: 'https://www.mixcloud.com/raboobi/shadowmixer-0321/',
+    artwork: 'assets/mixes/shadowmixer-0321.jpg',
     credit: 'raboobi on Mixcloud',  /* house */
   },
 
@@ -90,6 +93,7 @@ window.LUVIZ.mixes = [
     title: 'mAsTeR sTuDiO',
     provider: 'mixcloud',
     url: 'https://www.mixcloud.com/raboobi/master-studio/',
+    artwork: 'assets/mixes/master-studio.jpg',
     credit: 'raboobi on Mixcloud',
   },
 
@@ -104,6 +108,7 @@ window.LUVIZ.mixes = [
     title: 'Knee',
     provider: 'mixcloud',
     url: 'https://www.mixcloud.com/raboobi/knee/',
+    artwork: 'assets/mixes/knee.jpg',
     credit: 'raboobi on Mixcloud',
   },
 
@@ -111,6 +116,7 @@ window.LUVIZ.mixes = [
     title: 'E36',
     provider: 'mixcloud',
     url: 'https://www.mixcloud.com/raboobi/e36/',
+    artwork: 'assets/mixes/e36.jpg',
     credit: 'raboobi on Mixcloud',  /* house */
   },
 
@@ -118,6 +124,7 @@ window.LUVIZ.mixes = [
     title: 'Boris is 40 yo',
     provider: 'mixcloud',
     url: 'https://www.mixcloud.com/raboobi/boris-is-40-yo/',
+    artwork: 'assets/mixes/boris-is-40-yo.jpg',
     credit: 'raboobi on Mixcloud',  /* deep house, hip hop */
   },
 
@@ -132,6 +139,7 @@ window.LUVIZ.mixes = [
     title: 'Disco Delta Tango',
     provider: 'mixcloud',
     url: 'https://www.mixcloud.com/raboobi/disco-delta-tango/',
+    artwork: 'assets/mixes/disco-delta-tango.jpg',
     credit: 'raboobi on Mixcloud',  /* disco */
   },
 
@@ -139,6 +147,7 @@ window.LUVIZ.mixes = [
     title: 'Mac Banana 001',
     provider: 'mixcloud',
     url: 'https://www.mixcloud.com/raboobi/mac-banana-001/',
+    artwork: 'assets/mixes/mac-banana-001.jpg',
     credit: 'raboobi on Mixcloud',  /* jazz, house, funk, techno, hip hop */
   },
 
@@ -146,6 +155,7 @@ window.LUVIZ.mixes = [
     title: 'Nice party teaser mix',
     provider: 'mixcloud',
     url: 'https://www.mixcloud.com/raboobi/nice-party-teaser-mix/',
+    artwork: 'assets/mixes/nice-party-teaser-mix.jpg',
     credit: 'raboobi on Mixcloud',
   },
 

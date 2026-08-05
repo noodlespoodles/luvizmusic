@@ -148,21 +148,42 @@ test('every crew member has a non-empty name and bio', () => {
   assert.deepEqual(LUVIZ.validate.crew(LUVIZ.crew), []);
 });
 
-test('crew placeholders demonstrate every supported field', () => {
+test('every crew member carries the supported fields', () => {
   const { LUVIZ } = loadSite();
   for (const member of LUVIZ.crew) {
     assert.equal(typeof member.alias, 'string');
     assert.equal(typeof member.photo, 'string');
-    assert.ok(Array.isArray(member.links));
+    assert.ok(Array.isArray(member.links), 'links must be an array, even when empty');
   }
-  const withLinks = LUVIZ.crew.filter((m) => m.links.length > 0);
-  assert.ok(withLinks.length > 0, 'at least one crew member must demonstrate links');
-  for (const member of withLinks) {
+  // No floor on how many members have links. The crew is real people, and a
+  // member with nothing to link to yet is a normal state, not a broken file.
+  for (const member of LUVIZ.crew) {
     for (const link of member.links) {
       assert.ok(link.label && link.label.trim().length > 0);
-      assert.match(link.url, /^https?:\/\//);
+      assert.match(
+        link.url,
+        /^(https?:\/\/|mailto:)/,
+        'a crew link is a web profile or a booking address'
+      );
     }
   }
+});
+
+test('the validator accepts a booking address but rejects a bare string', () => {
+  const { LUVIZ } = loadSite();
+  const member = (links) => [
+    { name: 'Probe', alias: 'PROBE', bio: 'A bio.', photo: 'assets/crew/probe.jpg', links: links },
+  ];
+  assert.deepEqual(
+    LUVIZ.validate.crew(member([{ label: 'Bookings', url: 'mailto:hi@example.com' }])),
+    [],
+    'a mailto booking address should be accepted'
+  );
+  assert.notDeepEqual(
+    LUVIZ.validate.crew(member([{ label: 'Broken', url: 'soundcloud.com/no-scheme' }])),
+    [],
+    'a url with no scheme should still be rejected'
+  );
 });
 
 // ---------------------------------------------------------------------------
@@ -545,5 +566,51 @@ test('hero tagline in index.html matches content/site.js', () => {
     fromContent[2].trim(),
     'Tagline drift: edit content/site.js, then mirror it into the #hero <p> in ' +
       'index.html. content/site.js is what visitors actually see.'
+  );
+});
+
+// Same trap, same guard, for the blurb. Both live twice on purpose: content/
+// site.js is what JavaScript renders and what visitors read, index.html carries
+// a static copy so the words survive with JavaScript off (R22). Editing only the
+// HTML looks like it worked and then silently reverts on the next load.
+test('hero blurb in index.html matches content/site.js', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const { LUVIZ } = loadSite();
+
+  const staticCopy = /<p[^>]*id="hero-blurb"[^>]*>([\s\S]*?)<\/p>/.exec(html);
+  assert.ok(staticCopy, 'index.html must carry a #hero-blurb paragraph');
+
+  assert.strictEqual(
+    staticCopy[1].replace(/\s+/g, ' ').trim(),
+    LUVIZ.site.blurb.replace(/\s+/g, ' ').trim(),
+    'Blurb drift: edit content/site.js, then mirror it into #hero-blurb in ' +
+      'index.html. content/site.js is what visitors actually see.'
+  );
+});
+
+// Same trap as the tagline, one field along. The blurb is duplicated between
+// content/site.js (what JS renders) and index.html (the no-JS fallback), and
+// the owner has now edited the markup copy twice expecting it to show. This
+// fails loudly and says which file to edit.
+test('hero blurb in index.html matches content/site.js', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const site = fs.readFileSync(path.join(ROOT, 'content', 'site.js'), 'utf8');
+
+  const declared = /blurb:([\s\S]*?)\n\s*\n/.exec(site);
+  assert.ok(declared, 'content/site.js must declare a blurb');
+  const fromContent = (declared[1].match(/'([^']*)'/g) || [])
+    .map((chunk) => chunk.slice(1, -1))
+    .join('')
+    .trim();
+  assert.ok(fromContent.length > 0, 'the blurb must not be empty');
+
+  const staticCopy = /<p class="hero__blurb[^"]*"[^>]*>([^<]+)<\/p>/.exec(html);
+  assert.ok(staticCopy, 'index.html must carry a static hero blurb');
+
+  assert.strictEqual(
+    staticCopy[1].trim(),
+    fromContent,
+    'Blurb drift: edit content/site.js, then mirror it into the #hero-blurb <p> ' +
+      'in index.html. content/site.js is what visitors actually see.'
   );
 });

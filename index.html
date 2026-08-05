@@ -111,11 +111,12 @@
         -->
         <p class="hero__tagline" id="hero-tagline">You have no taste. Let us help.</p>
 
-        <!-- Same arrangement for the blurb: static copy, rewritten from content/site.js. -->
-        <p class="hero__blurb t-lede" id="hero-blurb">LUVIZMUSIC is a roaming night in
-        the Paradise Garage lineage: long sets, loud lows, and a floor that is treated
-        as an instrument. No guest-list theatre, no phones at the front, no records
-        played to be filmed.</p>
+        <!-- EDIT THIS TEXT IN content/site.js (the "blurb" field), NOT HERE.
+     This copy is only what shows if JavaScript fails. On a normal load
+     content/site.js is rendered over the top of it, so an edit made here
+     alone will appear for an instant and then vanish. A test keeps the two
+     in step and will fail if they drift. -->
+        <p class="hero__blurb t-lede" id="hero-blurb">LUVIZMUSIC is a roaming night put on by some absurdly music-obsessed people. Let the music envelop and cleanse you. No preconceptions. No prescriptions. Just goosebumps.</p>
 
         <p class="hero__jump t-label"><a href="#events">Next dates</a></p>
 
@@ -254,7 +255,8 @@
   <script src="js/intensity.js"></script>
 
   <!-- 7. Browser layer: renders sections, drives playback and motion. -->
-  <script src="js/sections.js"></script>
+  <script src="js/mix-art.js"></script>
+    <script src="js/sections.js"></script>
   <script src="js/players/adapter.js"></script>
   <script src="js/player-bar.js"></script>
   <script src="js/scenes.js"></script>
@@ -263,7 +265,8 @@
   <script src="js/section-fx.js"></script>
 
   <!-- 8. Boot. Always last: it assumes everything above has run. -->
-  <script src="js/app.js"></script>
+  <script src="js/nav-transition.js"></script>
+    <script src="js/app.js"></script>
 
 </body>
 </html>
