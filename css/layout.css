@@ -308,6 +308,23 @@ main {
     grid-row: 2;
   }
 
+  /*
+    A HEAD WITH NO NUMBER STARTS WHERE THE NUMBER WOULD HAVE. The eyebrows
+    ("01 / Residents") and the notes under each title are commented out in
+    index.html, which leaves the title as the first child of the head. Rather
+    than leaving it indented into a column whose label no longer exists, it
+    takes the whole width and starts flush with the rest of the page.
+
+    Keyed on :first-child on purpose: an HTML comment is not an element, so
+    uncommenting an eyebrow puts the title straight back into column 2 with
+    no CSS change. The rules above stay the live definition of the numbered
+    layout rather than becoming dead code.
+  */
+  .section-head__title:first-child,
+  .section-head__title:first-child ~ .section-head__note {
+    grid-column: 1 / -1;
+  }
+
 }
 
 
