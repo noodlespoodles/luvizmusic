@@ -285,3 +285,191 @@ test('wrap never returns an index outside the real list', () => {
     assert.ok(Number.isInteger(w) && w >= 0 && w < count, `wrap(${i}, ${count}) = ${w}`);
   }
 });
+
+// ---------------------------------------------------------------------------
+// U5 / KTD4: a clone is scenery, and must stay invisible to the player bar
+// ---------------------------------------------------------------------------
+
+const DRIVER_FILE = path.join(ROOT, 'js', 'mix-arc.js');
+
+/**
+ * The smallest element js/mix-arc.js's inertness pass actually uses. It needs
+ * attributes, a tag name, a recursive descendant walk, and cloneNode - and
+ * deliberately nothing else, so this cannot drift into a fake browser.
+ */
+function makeNode(tag, attributes) {
+  const node = {
+    tagName: String(tag).toUpperCase(),
+    children: [],
+    attributes: Object.assign({}, attributes),
+    setAttribute(name, value) {
+      node.attributes[name] = String(value);
+    },
+    getAttribute(name) {
+      return Object.prototype.hasOwnProperty.call(node.attributes, name)
+        ? node.attributes[name]
+        : null;
+    },
+    removeAttribute(name) {
+      delete node.attributes[name];
+    },
+    append(child) {
+      node.children.push(child);
+      return child;
+    },
+    getElementsByTagName() {
+      const out = [];
+      (function walk(n) {
+        for (const c of n.children) {
+          out.push(c);
+          walk(c);
+        }
+      })(node);
+      return out;
+    },
+    cloneNode() {
+      const copy = makeNode(tag, node.attributes);
+      for (const child of node.children) {
+        copy.append(child.cloneNode());
+      }
+      return copy;
+    },
+  };
+  return node;
+}
+
+/** A slot shaped like the one js/sections.js renders, wired by the player bar. */
+function makeSlot(index) {
+  const slot = makeNode('li', { class: 'mix-arc__slot' });
+  const card = slot.append(
+    makeNode('article', { 'data-mix-index': String(index), 'data-cue': 'true' })
+  );
+  card.append(makeNode('button', { type: 'button', 'aria-label': 'Play' }));
+  card.append(makeNode('a', { href: 'https://example.invalid/mix' }));
+  card.append(makeNode('figure', { id: 'cover-' + index }));
+  return slot;
+}
+
+function loadDriver() {
+  globalThis.window = globalThis;
+  delete globalThis.LUVIZ;
+  for (const file of [MODEL_FILE, DRIVER_FILE]) {
+    try {
+      delete require.cache[require.resolve(file)];
+    } catch (err) {
+      /* not previously required - the require below reports it */
+    }
+    require(file);
+  }
+  const arc = globalThis.LUVIZ && globalThis.LUVIZ.mixArc;
+  assert.ok(arc, 'js/mix-arc.js must define window.LUVIZ.mixArc');
+  return arc;
+}
+
+/** Every node in the tree still carrying a mix index. */
+function indexed(node) {
+  const out = [];
+  if (node.getAttribute('data-mix-index') !== null) {
+    out.push(node);
+  }
+  for (const child of node.getElementsByTagName('*')) {
+    if (child.getAttribute('data-mix-index') !== null) {
+      out.push(child);
+    }
+  }
+  return out;
+}
+
+test('the driver loads and exposes the inertness contract', () => {
+  const arc = loadDriver();
+  assert.equal(typeof arc.makeInert, 'function');
+  assert.equal(typeof arc.isClone, 'function');
+});
+
+test('a clone is marked and hidden from assistive technology', () => {
+  const arc = loadDriver();
+  const clone = arc.makeInert(makeSlot(0).cloneNode());
+  assert.equal(clone.getAttribute('data-arc-clone'), 'true');
+  assert.equal(clone.getAttribute('aria-hidden'), 'true');
+  assert.equal(arc.isClone(clone), true);
+});
+
+test('an original is not a clone', () => {
+  const arc = loadDriver();
+  assert.equal(arc.isClone(makeSlot(0)), false);
+});
+
+test('a clone carries no mix index anywhere in its subtree (KTD4)', () => {
+  const arc = loadDriver();
+  const original = makeSlot(3);
+  assert.equal(indexed(original).length, 1, 'the original has exactly one indexed card');
+
+  const clone = arc.makeInert(original.cloneNode());
+  assert.equal(
+    indexed(clone).length,
+    0,
+    'a clone that kept its index would be handed a second, dead play button by the player bar'
+  );
+});
+
+test('padding the ring with clones cannot change what the player bar claims', () => {
+  const arc = loadDriver();
+  const model = loadDriver() && globalThis.LUVIZ.mixArcModel;
+
+  /*
+    THE ASSERTION THIS WHOLE UNIT EXISTS FOR. The ring holds far more slots
+    than there are mixes. `.mix-card[data-mix-index]` is how js/player-bar.js
+    decides what to claim, so that count must equal the number of real mixes
+    no matter how much padding is added.
+  */
+  const REAL = 10;
+  const originals = Array.from({ length: REAL }, (unused, i) => makeSlot(i));
+  const slotCount = model.geometry(1440).slotCount;
+  assert.ok(slotCount > REAL, 'the circle needs more slots than there are mixes');
+
+  const ring = makeNode('ul', {});
+  originals.forEach((slot) => ring.append(slot));
+  for (let i = REAL; i < slotCount; i++) {
+    ring.append(arc.makeInert(originals[i % REAL].cloneNode()));
+  }
+
+  assert.equal(ring.children.length, slotCount, 'the circle is full');
+  assert.equal(
+    indexed(ring).length,
+    REAL,
+    `the ring holds ${slotCount} slots but must expose exactly ${REAL} indexed cards`
+  );
+});
+
+test('nothing inside a clone can be reached by keyboard', () => {
+  const arc = loadDriver();
+  const clone = arc.makeInert(makeSlot(0).cloneNode());
+  for (const node of clone.getElementsByTagName('*')) {
+    const tabindex = node.getAttribute('tabindex');
+    if (tabindex !== null) {
+      assert.ok(Number(tabindex) < 0, `${node.tagName} must not be tabbable inside a clone`);
+    }
+    for (const focusable of ['A', 'BUTTON', 'INPUT', 'SELECT', 'TEXTAREA']) {
+      if (node.tagName === focusable) {
+        assert.equal(tabindex, '-1', `a cloned <${focusable.toLowerCase()}> must be taken out of the tab order`);
+      }
+    }
+  }
+});
+
+test('a clone duplicates no id, which would break the labels on the original', () => {
+  const arc = loadDriver();
+  const clone = arc.makeInert(makeSlot(0).cloneNode());
+  for (const node of clone.getElementsByTagName('*')) {
+    assert.equal(node.getAttribute('id'), null);
+  }
+});
+
+test('an already-tabbable element inside a clone is taken out of the tab order', () => {
+  const arc = loadDriver();
+  const slot = makeSlot(0);
+  slot.children[0].append(makeNode('div', { tabindex: '0' }));
+  const clone = arc.makeInert(slot.cloneNode());
+  const div = clone.getElementsByTagName('*').find((n) => n.tagName === 'DIV');
+  assert.equal(div.getAttribute('tabindex'), '-1');
+});
