@@ -314,7 +314,14 @@
   padding-top: 3vh;
 }
 
-.mix-arc[data-arc-state] .mix-arc__viewport {
+/*
+  PENDING AND LIVE ONLY, never a bare [data-arc-state]. A viewport that has
+  been resized below the breakpoint carries data-arc-state="idle", and it
+  still has the inline height the arc measured for it. Clipping that would
+  render the grid inside a fixed-height box and cut most of it off.
+*/
+.mix-arc[data-arc-state="pending"] .mix-arc__viewport,
+.mix-arc[data-arc-state="live"] .mix-arc__viewport {
   position: relative;
   /* The height is written by js/mix-arc.js from the arc's measured droop
      plus a real card's height. Guessing it left a dead band under the

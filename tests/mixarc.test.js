@@ -629,6 +629,35 @@ test('the arc never breaks out with 100vw (R12)', () => {
   }
 });
 
+test('an idle arc never clips the grid it hands back', () => {
+  const css = fs.readFileSync(SECTIONS_CSS, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+
+  /*
+    A viewport resized below the breakpoint keeps data-arc-state="idle" and
+    the inline height the arc measured for it. If the clipping rule matched a
+    bare [data-arc-state] it would still apply, and the grid would render
+    inside a fixed-height box with most of it cut off.
+  */
+  const viewportRules = css
+    .split('}')
+    .filter((block) => block.includes('.mix-arc__viewport') && block.includes('overflow'));
+  assert.ok(viewportRules.length > 0, 'the viewport must have a clipping rule to check');
+  for (const block of viewportRules) {
+    assert.ok(
+      !/\.mix-arc\[data-arc-state\]\s/.test(block),
+      'the clipping rule must name pending and live, not any state'
+    );
+  }
+});
+
+test('the driver clears the measured height when it hands the grid back', () => {
+  const code = readCode(DRIVER_FILE);
+  assert.ok(
+    /data-arc-state',\s*'idle'\);[\s\S]{0,200}?viewport\.style\.height\s*=\s*''/.test(code),
+    'going idle must clear the inline height, which no stylesheet rule can undo'
+  );
+});
+
 test('the mixes section clips its own overflow rather than scrolling', () => {
   const css = fs.readFileSync(SECTIONS_CSS, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
   assert.ok(

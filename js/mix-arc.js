@@ -402,7 +402,12 @@
            half-dismantling it, leave it built but let the stylesheet hand the
            grid back: [data-arc-state] is what every arc rule hangs off. */
         if (global.innerWidth < MIN_VIEWPORT) {
+          /* Hand the grid back. The stylesheet stops applying arc rules the
+             moment the state stops being live, but the measured height is an
+             INLINE style and would survive, boxing the grid into the arc's
+             dimensions and clipping it. It has to be cleared here. */
           self.shell.setAttribute('data-arc-state', 'idle');
+          self.viewport.style.height = '';
           return;
         }
         self.shell.setAttribute('data-arc-state', 'live');
