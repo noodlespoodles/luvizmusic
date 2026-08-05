@@ -1,0 +1,23 @@
+# Licensed desktop font sources (KTD8).
+# Only the generated web fonts (fonts/*.woff2) are committed, alongside the
+# converter script. The OTFs are desktop-licensed and stay off the repo.
+FF Mark Pro/
+
+# Windows / macOS shell noise
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+.DS_Store
+._*
+
+# Editors
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Local scratch
+*.log
+tmp/

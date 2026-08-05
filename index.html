@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>LUVIZMUSIC</title>
+  <meta name="description" content="LUVIZMUSIC: a roaming night in the Paradise Garage lineage. Crew, mixes, and dates.">
+  <meta name="color-scheme" content="dark">
+
+  <!--
+    STYLESHEET ORDER IS FIXED AND DELIBERATE. Later files depend on the
+    custom properties and base rules set by earlier ones. Files that do not
+    exist yet are created by later units; a missing file 404s harmlessly and
+    the page still renders.
+      tokens      colour, spacing and type custom properties
+      texture     grain, misregistration and print artefacts
+      type        @font-face declarations and the type scale
+      base        element defaults, focus rings, reduced-motion floor
+      layout      page shell, fixed chrome, grid
+      sections    hero / crew / mixes / events / contact
+      player      the persistent player bar and provider frames
+      motion      classes GSAP animates, and their reduced-motion resting state
+      section-fx  per-section decorative effects
+  -->
+  <link rel="stylesheet" href="css/tokens.css">
+  <link rel="stylesheet" href="css/texture.css">
+  <link rel="stylesheet" href="css/type.css">
+  <link rel="stylesheet" href="css/base.css">
+  <link rel="stylesheet" href="css/layout.css">
+  <link rel="stylesheet" href="css/sections.css">
+  <link rel="stylesheet" href="css/player.css">
+  <link rel="stylesheet" href="css/motion.css">
+  <link rel="stylesheet" href="css/section-fx.css">
+</head>
+<body>
+
+  <main id="main">
+
+    <section id="hero" aria-labelledby="hero-title">
+      <h1 id="hero-title">LUVIZMUSIC</h1>
+      <p>Nine hours, one room, no encores.</p>
+      <noscript>
+        <p>The animated wordmark and the site tagline need JavaScript. The
+        crew, the mixes and the dates are listed below.</p>
+      </noscript>
+    </section>
+
+    <section id="crew" aria-labelledby="crew-title">
+      <h2 id="crew-title">Crew</h2>
+      <noscript>
+        <p>The resident list needs JavaScript to load. Email
+        <a href="mailto:bookings@luvizmusic.example">bookings@luvizmusic.example</a>
+        and we will send it to you.</p>
+      </noscript>
+    </section>
+
+    <section id="mixes" aria-labelledby="mixes-title">
+      <h2 id="mixes-title">Mixes</h2>
+      <noscript>
+        <p>The mixes and the player need JavaScript. Our sets are also on
+        <a href="https://soundcloud.com/luvizmusic">SoundCloud</a> and
+        <a href="https://mixcloud.com/luvizmusic">Mixcloud</a>.</p>
+      </noscript>
+    </section>
+
+    <section id="events" aria-labelledby="events-title">
+      <h2 id="events-title">Dates</h2>
+      <noscript>
+        <p>The dates list needs JavaScript to load. Upcoming nights are also
+        posted on <a href="https://instagram.com/luvizmusic">Instagram</a>.</p>
+      </noscript>
+    </section>
+
+    <section id="contact" aria-labelledby="contact-title">
+      <h2 id="contact-title">Contact</h2>
+      <p>Bookings and press:
+        <a href="mailto:bookings@luvizmusic.example">bookings@luvizmusic.example</a>
+      </p>
+      <noscript>
+        <p>The social links need JavaScript to load. Email us at the address
+        above and we will point you at the rest.</p>
+      </noscript>
+    </section>
+
+  </main>
+
+  <!--
+    SCRIPT ORDER IS FIXED AND DELIBERATE. These are classic scripts, not
+    modules, so they run top to bottom and each one can rely on everything
+    above it. This also keeps the site working when index.html is opened
+    straight off the disk by double-click, where modules and fetch() are
+    blocked by the browser. Files that do not exist yet are created by later
+    units; a missing file 404s harmlessly and the rest still runs.
+  -->
+
+  <!-- 1. The namespace. Must be first: everything else writes into it. -->
+  <script src="js/namespace.js"></script>
+
+  <!-- 2. Owner-editable content. Nothing else in the site is edited by hand. -->
+  <script src="content/site.js"></script>
+  <script src="content/crew.js"></script>
+  <script src="content/mixes.js"></script>
+  <script src="content/events.js"></script>
+
+  <!--
+    3. GSAP 3.15.0, version-pinned from jsDelivr (KTD2). Core first, then the
+       three plugins. Registration happens in js/scenes.js, not here.
+       TODO(SRI): add integrity="sha384-..." to each of these four tags. The
+       hashes must be generated from the exact files jsDelivr serves; they are
+       deliberately omitted rather than guessed, because a wrong integrity
+       value blocks the script entirely and silently kills all motion.
+  -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/gsap.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/SplitText.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/Observer.min.js" crossorigin="anonymous"></script>
+
+  <!-- 4. Pure logic: no DOM, no browser APIs, unit-tested under node --test. -->
+  <script src="js/provider-url.js"></script>
+  <script src="js/events-model.js"></script>
+  <script src="js/player-state.js"></script>
+  <script src="js/scene-plan.js"></script>
+  <script src="js/marquee-model.js"></script>
+  <script src="js/pointer-mode.js"></script>
+
+  <!-- 5. Per-provider player drivers, then the adapter that fronts them. -->
+  <script src="js/players/soundcloud.js"></script>
+  <script src="js/players/youtube.js"></script>
+  <script src="js/players/mixcloud.js"></script>
+  <script src="js/players/file.js"></script>
+
+  <!-- 6. Signals the view layer reads. -->
+  <script src="js/beat-clock.js"></script>
+  <script src="js/intensity.js"></script>
+
+  <!-- 7. Browser layer: renders sections, drives playback and motion. -->
+  <script src="js/sections.js"></script>
+  <script src="js/players/adapter.js"></script>
+  <script src="js/player-bar.js"></script>
+  <script src="js/scenes.js"></script>
+  <script src="js/cursor.js"></script>
+  <script src="js/marquee.js"></script>
+  <script src="js/section-fx.js"></script>
+
+  <!-- 8. Boot. Always last: it assumes everything above has run. -->
+  <script src="js/app.js"></script>
+
+</body>
+</html>
