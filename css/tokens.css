@@ -106,6 +106,30 @@
      rather than only for the resting state.
      ----------------------------------------------------------------------- */
 
+  /* -----------------------------------------------------------------------
+     The dithered ground (U12).
+
+     An 8x8 Bayer ordered dither, which is the threshold map a photocopier
+     or a one-colour press actually uses to fake tone from a single ink. Two
+     plates, screened at two angles, the way a two-colour press would.
+
+     --field-amplitude is the one number worth turning. It is the ceiling on
+     the whole layer's opacity, and it is held well below the point where the
+     field could affect the contrast of anything printed on top of it.
+     --field-cell is the size of one dot in device pixels: bigger reads as
+     newsprint, smaller reads as noise.
+     ----------------------------------------------------------------------- */
+
+  --field-amplitude: 0.30;
+  --field-cell: 3;
+
+  /* How far the ground is held back BEHIND THE READING SECTIONS. The hero
+     gets the field at full strength because it carries a wordmark and eight
+     words; everything from the crew section down carries paragraphs, and
+     paragraphs need a quieter ground than a headline does. Higher is
+     darker: this is the percentage of solid stock laid over the field. */
+  --field-dim: 70%;
+
   --grain-amplitude: 0.055;
   --grain-swell: 1;
   --grain-tile: 220px;
@@ -180,6 +204,11 @@
      Every fixed element is a direct child of body, outside any transformed
      ancestor, so these numbers actually mean something.
      ----------------------------------------------------------------------- */
+
+  /* The dithered ground sits BEHIND the content, not over it. Negative, so
+     it paints above the page's background colour and below every section.
+     Nothing in the field is ever allowed to compete with a word. */
+  --layer-field: -1;
 
   --layer-content: 0;
   --layer-raised: 10;

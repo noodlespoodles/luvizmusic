@@ -1,0 +1,116 @@
+/* =========================================================================
+   LUVIZMUSIC - the dithered ground
+   U12. Companion to css/texture.css.
+   -------------------------------------------------------------------------
+   An 8x8 Bayer ordered dither, rendered by a WebGL2 fragment shader into a
+   single fixed canvas that sits BEHIND every section.
+
+   WHY THIS DOES NOT BREAK THE NO-LIVE-FILTERS RULE (KTD6)
+
+   The ban in css/texture.css is on animating an SVG or CSS filter over a
+   large area, because the browser rasterises those on the CPU every frame.
+   This is the opposite: a fragment shader is the one thing a GPU is built
+   to do, it never touches layout, and it never invalidates a paint anywhere
+   else on the page. The canvas is composited like any other fixed layer.
+
+   Nothing here declares a colour. The two inks are read out of
+   css/tokens.css at runtime by js/dither-field.js and handed to the shader
+   as uniforms, so the palette still has exactly one home.
+
+   WHAT THIS FILE MUST NEVER GAIN: a filter, a blur, a shadow, a
+   backdrop-filter, or content-visibility. The first three are the print
+   rule; backdrop-filter on a fixed layer is severe iOS scroll jank; and
+   content-visibility on anything a ScrollTrigger measures breaks the
+   measurement.
+   ========================================================================= */
+
+.dither-field {
+  position: fixed;
+  top: 0;
+  left: 0;
+
+  /*
+    LOAD BEARING. A canvas is a replaced element: with width:auto it takes
+    its intrinsic drawing-buffer size and ignores the inset box entirely, so
+    the field stops dead at whatever the buffer happens to be. These two
+    lines are what make it cover the viewport.
+  */
+  width: 100%;
+  height: 100%;
+
+  z-index: var(--layer-field);
+  pointer-events: none;
+
+  /*
+    The ceiling on the whole layer. js/dither-field.js never writes opacity;
+    it is stated once here so the amplitude is a token the owner can turn,
+    and so the resting value is correct even if the script never runs.
+  */
+  opacity: var(--field-amplitude);
+
+  /* The canvas is decoration with no meaning. Kept out of the a11y tree by
+     aria-hidden in the markup as well; this is belt and braces. */
+  user-select: none;
+}
+
+/*
+  NO CANVAS, NO PROBLEM. If WebGL2 is missing, or the script never runs, the
+  element is left with nothing drawn in it and is simply invisible. The page
+  keeps css/texture.css's grain, which is the floor the art direction was
+  built on and has never depended on this layer.
+*/
+.dither-field:not([data-state="live"]) {
+  opacity: 0;
+}
+
+/* -------------------------------------------------------------------------
+   The reading scrim
+   -------------------------------------------------------------------------
+   THE HERO CAN CARRY THE FIELD AT FULL STRENGTH. It is a wordmark, a
+   tagline and one short paragraph, all of it large. Everything from the crew
+   section down is paragraphs, tables of dates and mix titles, and a field
+   that flatters a headline competes with body copy.
+
+   So the ground is held back behind the reading sections: a wash of the same
+   near-black stock, laid over the field and under the words. Not a blur and
+   not a filter, just ink coverage, which is the one move a press could
+   actually make.
+
+   STATED AS AN EXCLUSION, NOT A LIST. Any section added later is a reading
+   section until someone deliberately says otherwise, so legibility is the
+   default rather than something each new section has to remember to ask for.
+
+   The hero is the single exclusion: it is the one section art-directed
+   around the field rather than in spite of it.
+
+   Contact used to be excluded too, because it printed on solid bone and the
+   field was hidden there by a real background. It prints on the same
+   near-black as everything else now, so it takes the scrim like every other
+   reading section.
+
+   The colour still has exactly one home: this mixes the existing stock token
+   with transparency rather than declaring a second near-black.
+   ------------------------------------------------------------------------- */
+
+.section:not(.section--hero) {
+  background-color: color-mix(
+    in srgb,
+    var(--ground-near-black) var(--field-dim),
+    transparent
+  );
+}
+
+/* -------------------------------------------------------------------------
+   Reduced motion (R19)
+   -------------------------------------------------------------------------
+   The field is a moving decoration with no content in it, so under reduce it
+   does not slow down, it goes. js/dither-field.js declines to create the
+   WebGL context at all; this is the same decision stated in CSS for the case
+   where the script never ran.
+   ------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  .dither-field {
+    display: none;
+  }
+}
