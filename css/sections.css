@@ -281,6 +281,83 @@
   opacity: var(--ink-coverage-full);
 }
 
+/* -------------------------------------------------------------------------
+   4b. THE ARC
+   -------------------------------------------------------------------------
+   EVERY RULE IN THIS BLOCK IS SCOPED UNDER [data-arc-state], and only
+   js/mix-arc.js ever sets that attribute. Under reduced motion, on a narrow
+   screen, with GSAP blocked, or with no mixes to show, it is never set, none
+   of this applies, and the grid above stands untouched. That is the whole
+   fallback: there is no second layout to maintain.
+   ------------------------------------------------------------------------- */
+
+.mix-arc[data-arc-state] .mix-arc__viewport {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Measured but not yet placed. Hidden for one frame rather than letting the
+   visitor see every card stacked on top of the first. */
+.mix-arc[data-arc-state="pending"] .mix-arc__viewport {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The ring. It is the <ul> itself: its transform origin sits far below the
+   viewport, so rotating it swings every slot along the arc at once. */
+.mix-arc[data-arc-state="live"] .mix-list {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  width: var(--arc-card-width);
+  margin-left: calc(var(--arc-card-width) / -2);
+  gap: 0;
+  transform-origin: 50% var(--arc-radius);
+  /* Promoted once, on the one element that actually turns. The slots are
+     deliberately NOT promoted: forty-odd compositor layers costs real
+     memory, and their opacity and transform are already cheap. */
+  will-change: transform;
+  cursor: grab;
+}
+
+.mix-arc[data-arc-dragging] .mix-list {
+  cursor: grabbing;
+}
+
+/*
+  A slot is a spoke. It is as tall as the circle's radius and pinned by its
+  far end, so rotating it swings the card at the top around the rim. Its own
+  angle is fixed at build time; the ring supplies the rest, and the browser
+  composes the two without either being rewritten per frame.
+*/
+.mix-arc[data-arc-state="live"] .mix-arc__slot {
+  display: block;
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: var(--arc-radius);
+  transform-origin: 50% var(--arc-radius);
+  transform: rotate(var(--slot-angle, 0deg));
+}
+
+/* The card must NOT stretch to the spoke's height, which the grid-fallback
+   flex rule above would otherwise make it do. */
+.mix-arc[data-arc-state="live"] .mix-arc__slot > .mix-card {
+  flex: 0 0 auto;
+  height: auto;
+  transform-origin: 50% 50%;
+}
+
+/* Nothing inside the ring is a drag handle for the browser's own image and
+   text dragging, which would fight the gesture. */
+.mix-arc[data-arc-state="live"] .mix-list a,
+.mix-arc[data-arc-state="live"] .mix-list img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+
 .mix-card__meta {
   margin-top: var(--space-s);
   display: flex;

@@ -399,6 +399,16 @@
     }
     optional('the player bar', LUVIZ.playerBar, 'init', [LUVIZ.mixes]);
 
+    /*
+      THE MIXES ARC, AND IT MUST BE THIS LINE, NOT A SCRIPT TAG. The arc
+      clones cards to fill its ring, and a clone is taken as the card
+      stands. The player bar claims its cards on the line above - at boot,
+      not when its file parses - so an arc started any earlier would clone
+      cards that had no play button on them yet, and the missing buttons
+      would only show as the wheel turned.
+    */
+    optional('the mixes arc', LUVIZ.mixArc, 'init', []);
+
     /* U7's beat clock and intensity signal. */
     optional('the intensity signal', LUVIZ.intensity, 'start', []);
 

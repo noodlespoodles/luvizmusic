@@ -312,6 +312,7 @@
   <script src="js/events-model.js"></script>
   <script src="js/player-state.js"></script>
   <script src="js/scene-plan.js"></script>
+  <script src="js/mix-arc-model.js"></script>
   <script src="js/marquee-model.js"></script>
   <script src="js/pointer-mode.js"></script>
 
@@ -330,6 +331,11 @@
     <script src="js/sections.js"></script>
   <script src="js/players/adapter.js"></script>
   <script src="js/player-bar.js"></script>
+  <!-- The arc is STARTED from js/app.js boot(), not by being loaded here.
+       It clones cards that the player bar above has to have claimed first,
+       and that claiming happens at boot rather than at parse time, so tag
+       order cannot express the dependency. This tag only defines it. -->
+  <script src="js/mix-arc.js"></script>
   <script src="js/scenes.js"></script>
   <script src="js/influences.js"></script>
   <script src="js/dither-field.js"></script>
