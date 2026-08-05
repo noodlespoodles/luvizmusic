@@ -315,6 +315,17 @@ function makeNode(tag, attributes) {
     },
     append(child) {
       node.children.push(child);
+      child.parentNode = node;
+      return child;
+    },
+    appendChild(child) {
+      return node.append(child);
+    },
+    removeChild(child) {
+      const at = node.children.indexOf(child);
+      if (at >= 0) {
+        node.children.splice(at, 1);
+      }
       return child;
     },
     getElementsByTagName() {
@@ -329,18 +340,33 @@ function makeNode(tag, attributes) {
     },
     cloneNode() {
       const copy = makeNode(tag, node.attributes);
+      copy.className = node.className;
       for (const child of node.children) {
         copy.append(child.cloneNode());
       }
       return copy;
     },
   };
+
+  /* The handful of layout-ish properties the driver reads or writes. None of
+     them fakes layout: offsetHeight is a fixed number so sizeViewport has
+     something real-shaped to work from. */
+  node.className = '';
+  node.style = { setProperty() {}, removeProperty() {} };
+  node.offsetHeight = 240;
+  Object.defineProperty(node, 'firstChild', {
+    get: () => (node.children.length ? node.children[0] : null),
+  });
+
   return node;
 }
 
 /** A slot shaped like the one js/sections.js renders, wired by the player bar. */
 function makeSlot(index) {
   const slot = makeNode('li', { class: 'mix-arc__slot' });
+  /* js/sections.js sets this through el(), and the driver reads the property
+     rather than the attribute when it decides which children are slots. */
+  slot.className = 'mix-arc__slot';
   const card = slot.append(
     makeNode('article', { 'data-mix-index': String(index), 'data-cue': 'true' })
   );
@@ -463,6 +489,153 @@ test('a clone duplicates no id, which would break the labels on the original', (
   for (const node of clone.getElementsByTagName('*')) {
     assert.equal(node.getAttribute('id'), null);
   }
+});
+
+// ---------------------------------------------------------------------------
+// U6 / R10, R11, R12: every reason not to build leaves the grid standing
+// ---------------------------------------------------------------------------
+
+const SECTIONS_CSS = path.join(ROOT, 'css', 'sections.css');
+
+/**
+ * A page with the arc markup in it, plus switches for each thing init()
+ * checks. Nothing here fakes layout: these tests prove only that the guards
+ * fire and that a refusal leaves no state behind.
+ */
+function makePage(options) {
+  const opts = Object.assign(
+    { reduced: false, width: 1440, gsap: true, cards: 3 },
+    options
+  );
+
+  const viewport = makeNode('div', { class: 'mix-arc__viewport' });
+  const shell = makeNode('div', { class: 'mix-arc', 'data-mix-arc': '' });
+  shell.append(viewport);
+  shell.querySelector = (sel) => (sel === '.mix-arc__viewport' ? viewport : null);
+  shell.addEventListener = () => {};
+
+  const ring = makeNode('ul', { id: 'mix-list' });
+  for (let i = 0; i < opts.cards; i++) {
+    ring.append(makeSlot(i));
+  }
+
+  globalThis.window = globalThis;
+  globalThis.document = {
+    querySelector: (sel) => (sel === '[data-mix-arc]' ? shell : null),
+    getElementById: (id) => (id === 'mix-list' ? ring : null),
+  };
+  globalThis.matchMedia = () => ({ matches: opts.reduced });
+  globalThis.innerWidth = opts.width;
+  /* The driver watches for resizes. Node has no window to listen on, and a
+     no-op listener means the debounced rebuild never fires - so the real
+     timers are deliberately left alone rather than stubbed out under the
+     test runner's feet. */
+  globalThis.addEventListener = () => {};
+  globalThis.gsap = opts.gsap ? { registerPlugin() {}, getProperty: () => 0, utils: { snap: () => (v) => v } } : undefined;
+  globalThis.Draggable = opts.gsap ? { create() {} } : undefined;
+
+  return { shell, ring };
+}
+
+function loadDriverForPage() {
+  delete globalThis.LUVIZ;
+  for (const file of [MODEL_FILE, DRIVER_FILE]) {
+    try {
+      delete require.cache[require.resolve(file)];
+    } catch (err) {
+      /* not previously required */
+    }
+    require(file);
+  }
+  return globalThis.LUVIZ.mixArc;
+}
+
+/** Run init() against a stubbed page and report what it left behind. */
+function tryInit(options) {
+  const { shell, ring } = makePage(options);
+  const arc = loadDriverForPage();
+  const built = arc.init();
+  return { built, state: shell.getAttribute('data-arc-state'), shell, ring };
+}
+
+test('under reduced motion the arc is never constructed at all (R10)', () => {
+  const run = tryInit({ reduced: true });
+  assert.equal(run.built, false, 'it must not build');
+  assert.equal(
+    run.state,
+    null,
+    'and must leave no state behind - every arc rule in the stylesheet hangs off ' +
+      '[data-arc-state], so no attribute means the plain grid stands'
+  );
+});
+
+test('below the breakpoint the grid stands (R10, KD3)', () => {
+  const arc = loadDriverForPage();
+  const run = tryInit({ width: arc.MIN_VIEWPORT - 1 });
+  assert.equal(run.built, false);
+  assert.equal(run.state, null);
+});
+
+test('at the breakpoint the arc does build', () => {
+  const arc = loadDriverForPage();
+  const run = tryInit({ width: arc.MIN_VIEWPORT });
+  assert.equal(run.built, true);
+  assert.equal(run.state, 'live');
+});
+
+test('with GSAP blocked the section still prints every mix (R11)', () => {
+  const run = tryInit({ gsap: false });
+  assert.equal(run.built, false);
+  assert.equal(run.state, null);
+  assert.equal(run.ring.children.length, 3, 'the cards are left exactly as rendered');
+});
+
+test('with no mixes to show there is no ring to build', () => {
+  const run = tryInit({ cards: 0 });
+  assert.equal(run.built, false);
+  assert.equal(run.state, null, 'an empty state must not be hidden behind a pending viewport');
+});
+
+test('a refusal never leaves clones behind', () => {
+  for (const options of [{ reduced: true }, { width: 320 }, { gsap: false }]) {
+    const run = tryInit(options);
+    const clones = run.ring.children.filter(
+      (c) => c.getAttribute('data-arc-clone') !== null
+    );
+    assert.equal(clones.length, 0, `clones leaked with ${JSON.stringify(options)}`);
+  }
+});
+
+test('a successful build pads the ring and leaves the real mixes claimable', () => {
+  const run = tryInit({ cards: 3 });
+  assert.equal(run.built, true);
+  assert.ok(run.ring.children.length > 3, 'the circle is padded out');
+  assert.equal(indexed(run.ring).length, 3, 'but only the real mixes carry an index');
+});
+
+// ---------------------------------------------------------------------------
+// R12: the full-bleed must not put a horizontal scrollbar on the page
+// ---------------------------------------------------------------------------
+
+test('the arc never breaks out with 100vw (R12)', () => {
+  const css = fs.readFileSync(SECTIONS_CSS, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  const arcRules = css.split(/(?=\.mix-arc)/).filter((block) => block.startsWith('.mix-arc'));
+  assert.ok(arcRules.length > 0, 'the arc must have rules to check');
+  for (const block of arcRules) {
+    assert.ok(
+      !/width:\s*100vw/.test(block),
+      '100vw counts the scrollbar, so it widens the document and R18 forbids it'
+    );
+  }
+});
+
+test('the mixes section clips its own overflow rather than scrolling', () => {
+  const css = fs.readFileSync(SECTIONS_CSS, 'utf8').replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.ok(
+    /#mixes\s*\{[^}]*overflow-x:\s*clip/.test(css),
+    'the break-out is contained by clipping #mixes; without it the negative ' +
+      'margins overshoot by the scrollbar width and the page scrolls sideways'
+  );
 });
 
 test('an already-tabbable element inside a clone is taken out of the tab order', () => {

@@ -291,8 +291,34 @@
    fallback: there is no second layout to maintain.
    ------------------------------------------------------------------------- */
 
+/*
+  FULL BLEED, WITHOUT WIDENING THE DOCUMENT (R12).
+
+  The reference breaks out with `width: 100vw`. We must not: 100vw counts
+  the vertical scrollbar, so on any page tall enough to have one the element
+  is wider than the space available and the browser answers with a
+  HORIZONTAL scrollbar. R18 rules that out.
+
+  Instead the shell breaks out with negative margins and #mixes clips
+  whatever overshoots. `overflow-x: clip` rather than `hidden` on purpose:
+  hidden would make the section a scroll container, which changes how
+  position: sticky and the page's own scrolling behave. clip just clips.
+*/
+#mixes {
+  overflow-x: clip;
+}
+
+.mix-arc[data-arc-state="live"] {
+  margin-left: calc(50% - 50vw);
+  margin-right: calc(50% - 50vw);
+  padding-top: 3vh;
+}
+
 .mix-arc[data-arc-state] .mix-arc__viewport {
   position: relative;
+  /* The height is written by js/mix-arc.js from the arc's measured droop
+     plus a real card's height. Guessing it left a dead band under the
+     wheel in the prototype. */
   overflow: hidden;
 }
 
