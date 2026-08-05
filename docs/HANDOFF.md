@@ -49,8 +49,14 @@ U7 beat clock and intensity signal, U8 scroll choreography, plus
 1. **Crew bios still describe invented people.** Names and photos are real;
    the words are mine, about fictional characters. One bio still needed a
    pronoun neutralised because of it.
-2. **No mix has a `beatGrid`,** so every beat-driven effect is inert by
-   design. One BPM per mix switches the whole layer on.
+2. **Beat sync is dead for embedded mixes — decided 2026-08-05, do not
+   revisit.** Ben's mixes have non-static tempo that speeds up as the mix
+   progresses, so no hand-typed tempo map can track them, and the page cannot
+   hear a cross-origin embed to correct itself. The beat layer stays inert.
+   The ONLY route to real sync is self-hosting a mix through the `file`
+   provider, which is same-origin and can drive a genuine AnalyserNode.
+   Everything else runs off scroll and pointer via the intensity signal,
+   which already works and needs nothing from Ben.
 3. **The iOS first-play spike has never been run on a real phone.** It is at
    `spike/ios-activation.html`, served over HTTP, with instructions in
    `spike/README.md`. This is the single largest unverified assumption in the

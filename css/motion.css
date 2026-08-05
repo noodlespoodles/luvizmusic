@@ -225,33 +225,24 @@ html.motion-on .event::after {
 }
 
 /* -------------------------------------------------------------------------
-   ...AND IF IT CLAIMS A VIEWPORT, IT USES ONE.
+   HOW TALL THE HERO ACTUALLY NEEDS TO BE
 
-   The rule above gives the hero a full screen so the wordmark bleed has
-   travel to scrub through. On its own that left every word stacked at the
-   top with a third of the screen empty beneath, which reads as a bug rather
-   than as space.
+   The rule above gave the hero a full viewport so the wordmark scrub had
+   travel. That left a large dead gap under the words.
 
-   So the hero's inner column distributes instead: the mark and the words sit
-   optically high, and the jump to the dates is pushed to the foot by the
-   auto margin, where it doubles as the cue that there is more below. The
-   height becomes composition rather than a gap.
+   The first attempt at fixing it made the inner a flex column and pushed the
+   dates link down with an auto margin. That was worse on two counts: the
+   stretched column clipped the L and the C off the wordmark, and the pushed
+   link opened a bigger gap than the one it was closing. Reverted.
 
-   Scoped to .motion-on, exactly like the min-height it corrects, so the
-   no-JS and reduced-motion page keeps its plain stacked hero.
+   The floor is simply lower now. There is still enough travel for the scrub,
+   and the section ends near where its words end.
    ------------------------------------------------------------------------- */
 
-html.motion-on .section--hero .hero__inner {
-  display: flex;
-  flex-direction: column;
-  min-height: inherit;
-}
-
-html.motion-on .section--hero .hero__blurb {
-  /* The words stop here; everything below is the foot. */
-  margin-bottom: var(--space-l);
-}
-
-html.motion-on .section--hero .hero__jump {
-  margin-top: auto;
+html.motion-on .section--hero {
+  /* No viewport floor at all. The hero's own words are ~600px tall on a
+     laptop, which is more scrub travel than the wordmark bleed needs, and
+     any floor above the content height is just a black gap under the
+     dates link. Measured, not guessed: 100svh and 72svh both overshot. */
+  min-height: 0;
 }

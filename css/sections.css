@@ -502,3 +502,11 @@
   }
 
 }
+
+/* The hero carries the standard --section-rhythm padding on both sides, but
+   its lead-out is the dates link rather than a block of content, so the
+   bottom half of that rhythm reads as a dead gap under the link rather than
+   as breathing room. Halved here only, leaving every other section alone. */
+.section--hero {
+  padding-bottom: calc(var(--section-rhythm) / 2);
+}

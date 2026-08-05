@@ -1,0 +1,310 @@
+/* =========================================================================
+   LUVIZMUSIC - the influences wall
+   U11. R26, R27, R28, R29.
+   -------------------------------------------------------------------------
+   A rack of records seen from the side. Four depth layers stacked into ONE
+   grid cell (grid-area: 1/1) so they genuinely overlap, each in its own band
+   of the css/type.css scale, from caption-scale up to names that run clean
+   off the trim edge.
+
+   NOTHING HERE DECLARES A LITERAL COLOUR. Every ink is a token from
+   css/tokens.css, and the misregistration is U3's --misreg family rather
+   than a second implementation of the same idea.
+
+   ONLY transform, opacity and colour ever change. js/influences.js writes six
+   custom properties on the wall root and every element below derives its own
+   transform from them, so ninety-odd names move on one write and the
+   compositor does all of it. No filter of any kind is declared or animated,
+   and neither is the property that skips rendering offscreen content, which
+   would break ScrollTrigger's measurement of a triggered section.
+   ========================================================================= */
+
+.section--influences {
+  /* clip, not hidden: clip does not create a scroll container, so U8's
+     ScrollTrigger work is not fighting an accidental scroll box. The names in
+     the nearest layer are MEANT to run off both edges - that is the whole
+     point of the band - and this is what keeps the body from scrolling
+     sideways while they do it (R18). */
+  overflow-x: hidden;
+  overflow-x: clip;
+}
+
+.influences {
+  position: relative;
+  isolation: isolate;
+  margin-top: var(--space-l);
+
+  /* The resting values. js/influences.js overwrites these every frame the
+     signal changes; if the script never runs, these are what is painted -
+     zero separation, invisible ghosts, full-strength names. A no-JS visitor
+     gets a legible wall, not a smear. */
+  --wall-dx: 0px;
+  --wall-dy: 0px;
+  --wall-ghost: 0;
+  --wall-ink: 1;
+  --wall-px: 0px;
+  --wall-py: 0px;
+}
+
+/* -------------------------------------------------------------------------
+   1. The field
+   -------------------------------------------------------------------------
+   One grid cell. Every name is a grid item at 1/1 and positions itself
+   inside that cell from its own --lane and --row, so the layers overlap by
+   construction rather than by z-index luck. The list is tall on purpose: a
+   wall you scroll past is a wall you can flick through.
+   ------------------------------------------------------------------------- */
+
+.influences__list {
+  position: relative;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  min-block-size: 145vh;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.influences__name {
+  grid-area: 1 / 1;
+  position: absolute;
+  inset-inline-start: calc(var(--lane, 0) * 1%);
+  inset-block-start: calc(var(--row, 0) * 1%);
+
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 1fr;
+  white-space: nowrap;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+
+  /* The parallax. The root writes one travel distance; each layer scales it
+     by its own depth, so the far band barely moves and the near band swings.
+     One property write, four rates of travel. */
+  transform:
+    translate3d(calc(var(--wall-px) * var(--depth, 0)), calc(var(--wall-py) * var(--depth, 0)), 0)
+    rotate(var(--rot, 0deg));
+  will-change: transform;
+}
+
+/* The three impressions, stacked in one cell: red plate, bone plate, and the
+   true one on top. The plates are aria-hidden duplicates (R29). */
+.influences__plate,
+.influences__true {
+  grid-area: 1 / 1;
+}
+
+/* -------------------------------------------------------------------------
+   2. Legibility, driven by intensity and nothing else (R27)
+   -------------------------------------------------------------------------
+   At rest --wall-dx and --wall-dy are zero, the plates sit exactly under the
+   true impression, --wall-ghost is 0 and they are invisible: the name reads
+   cleanly. As the visitor moves, the plates walk apart along the signal's
+   own direction and fade up while the true impression fades down. Stop, and
+   it converges again.
+   ------------------------------------------------------------------------- */
+
+.influences__plate {
+  opacity: var(--wall-ghost);
+  mix-blend-mode: lighten;
+  pointer-events: none;
+  transition: opacity 90ms linear;
+}
+
+.influences__plate--a {
+  color: var(--misreg-ink-a, var(--red-bright));
+  transform: translate(calc(var(--wall-dx) * -1), calc(var(--wall-dy) * -1));
+}
+
+.influences__plate--b {
+  color: var(--misreg-ink-b, var(--ink-bone));
+  transform: translate(var(--wall-dx), var(--wall-dy));
+}
+
+.influences__true {
+  opacity: var(--wall-ink);
+  transition: opacity 90ms linear, color 120ms linear;
+}
+
+/* -------------------------------------------------------------------------
+   3. The four depth layers
+   -------------------------------------------------------------------------
+   Different scale band, different weight, different ink, different rate of
+   travel. Italic is the voice; upright is information - so only the nearest,
+   loudest band is set in the italic face.
+   ------------------------------------------------------------------------- */
+
+.influences__name--red .influences__true {
+  color: var(--red-bright);
+}
+
+.influences__name--bone .influences__true {
+  color: var(--ink-bone);
+}
+
+.influences__name--ghost {
+  font-size: var(--step-n1);
+  font-weight: var(--weight-hairline);
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+  opacity: var(--ink-coverage-ghost);
+}
+
+.influences__name--field {
+  font-size: var(--step-0);
+  font-weight: var(--info-weight);
+  letter-spacing: var(--track-caption);
+  opacity: var(--ink-coverage-quiet);
+}
+
+.influences__name--near {
+  font-size: var(--step-2);
+  font-weight: var(--info-weight-loud);
+  letter-spacing: var(--track-title);
+  line-height: var(--leading-title);
+}
+
+/*
+  THE BLEEDING BAND. Deliberately bigger than the screen. At 320px these
+  names run off both edges rather than shrinking to something timid, which is
+  the same decision the hero wordmark makes - the section clips them, so the
+  page still never scrolls sideways.
+*/
+.influences__name--bleed {
+  font-size: var(--step-5);
+  font-style: var(--voice-style);
+  font-weight: var(--voice-weight);
+  letter-spacing: var(--track-display);
+  line-height: var(--leading-display);
+  z-index: var(--layer-content);
+}
+
+/* SplitText's per-line wrapper on the resolved names in the bleeding band. */
+.influences__line {
+  display: block;
+  will-change: transform;
+}
+
+/* -------------------------------------------------------------------------
+   4. The beat flash (R28, R20)
+   -------------------------------------------------------------------------
+   At most four names at once, each one a small area, for one beat. Bone ink
+   on the near-black ground and never red on red: WCAG holds saturated red to
+   a stricter threshold than anything else, and red is this site's whole
+   palette. js/influences.js will not put this class on a name in a red band
+   or in the bleeding band, so this can never become a large-area change.
+   ------------------------------------------------------------------------- */
+
+.influences__name.is-flash .influences__true {
+  color: var(--ink-bone);
+  opacity: var(--ink-coverage-full);
+}
+
+.influences__name.is-flash .influences__plate {
+  opacity: 0;
+}
+
+.influences__name.is-flash {
+  opacity: var(--ink-coverage-full);
+}
+
+/* -------------------------------------------------------------------------
+   5. Reduced motion, and the no-JS floor (R29, R19)
+   -------------------------------------------------------------------------
+   The names are the content; the smearing is the decoration. Under reduce the
+   decoration goes and the whole list stays: a plain, fully legible, statically
+   laid-out set of names in one band, in register, at full strength.
+
+   Stated twice on purpose. The attribute covers the case where the script
+   read the preference and drew the static layout; the media query covers the
+   case where the script never ran at all.
+   ------------------------------------------------------------------------- */
+
+.influences[data-state="static"] .influences__list,
+.influences__list:empty {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2xs) var(--space-m);
+  min-block-size: 0;
+}
+
+.influences[data-state="static"] .influences__name {
+  position: static;
+  transform: none;
+  font-size: var(--step-1);
+  font-style: var(--info-style);
+  font-weight: var(--info-weight);
+  letter-spacing: var(--track-body);
+  line-height: var(--leading-body);
+  opacity: var(--ink-coverage-full);
+  white-space: normal;
+}
+
+.influences[data-state="static"] .influences__true {
+  color: var(--ink-bone);
+  opacity: var(--ink-coverage-full);
+}
+
+.influences[data-state="static"] .influences__plate {
+  display: none;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .influences {
+    --wall-dx: 0px;
+    --wall-dy: 0px;
+    --wall-ghost: 0;
+    --wall-ink: 1;
+    --wall-px: 0px;
+    --wall-py: 0px;
+  }
+
+  .influences__list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-2xs) var(--space-m);
+    min-block-size: 0;
+  }
+
+  .influences__name {
+    position: static;
+    transform: none;
+    font-size: var(--step-1);
+    font-style: var(--info-style);
+    font-weight: var(--info-weight);
+    letter-spacing: var(--track-body);
+    line-height: var(--leading-body);
+    opacity: var(--ink-coverage-full);
+    white-space: normal;
+    will-change: auto;
+  }
+
+  .influences__true {
+    color: var(--ink-bone);
+    opacity: var(--ink-coverage-full);
+    transition: none;
+  }
+
+  .influences__plate {
+    display: none;
+  }
+}
+
+/* -------------------------------------------------------------------------
+   6. Narrow viewports
+   -------------------------------------------------------------------------
+   The field gets taller, not smaller. Shrinking the type to fit would trade
+   the whole idea for tidiness.
+   ------------------------------------------------------------------------- */
+
+@media (max-width: 47.99em) {
+  .influences__list {
+    min-block-size: 175vh;
+  }
+
+  .influences__name--bleed {
+    font-size: var(--step-4);
+  }
+}
