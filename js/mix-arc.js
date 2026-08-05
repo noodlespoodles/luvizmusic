@@ -193,6 +193,11 @@
     return !!(slot.getAttribute && slot.getAttribute('data-arc-clone') === 'true');
   }
 
+  /** The card inside a slot. Never firstChild, which can be a text node. */
+  function cardOf(slot) {
+    return slot.firstElementChild || slot.firstChild || null;
+  }
+
   /**
    * The box only has to hold the slice of the wheel that is on screen: how
    * far the arc has dropped by the time it leaves the viewport, plus a real
@@ -204,7 +209,7 @@
     var halfSpan = global.innerWidth / 2 + g.cardWidth / 2;
     var edge = Math.asin(Math.min(1, halfSpan / g.radius));
     var drop = g.radius * (1 - Math.cos(edge));
-    var card = this.slots.length ? this.slots[0].firstChild : null;
+    var card = this.slots.length ? cardOf(this.slots[0]) : null;
     var cardHeight = (card && card.offsetHeight) || 240;
     this.viewport.style.height = Math.round(drop + cardHeight + VIEWPORT_PAD) + 'px';
   };
@@ -235,7 +240,7 @@
       /* Scale belongs on the CARD, whose origin is its own middle. On the
          slot it would scale about the centre of the circle and send the
          card sliding off the arc. */
-      var card = slot.firstChild;
+      var card = cardOf(slot);
       if (card && card.style) {
         card.style.transform = 'scale(' + p.scale.toFixed(3) + ')';
       }
@@ -392,6 +397,43 @@
     });
   };
 
+  /**
+   * Hand the list back exactly as js/sections.js rendered it.
+   *
+   * THE STYLESHEET CANNOT DO THIS ON ITS OWN. Dropping data-arc-state stops
+   * the arc rules applying, but the ring's padding is real elements and the
+   * frame loop's opacity, visibility, stacking and scale are INLINE styles.
+   * Left behind, the grid comes back holding several dozen duplicate cards,
+   * most of them faded out or invisible. Both have to be undone here.
+   */
+  Arc.prototype.teardown = function () {
+    var i;
+    for (i = this.ring.children.length - 1; i >= 0; i--) {
+      var node = this.ring.children[i];
+      if (isClone(node)) {
+        this.ring.removeChild(node);
+      }
+    }
+
+    for (i = 0; i < this.originals.length; i++) {
+      var slot = this.originals[i];
+      slot.style.opacity = '';
+      slot.style.visibility = '';
+      slot.style.zIndex = '';
+      slot.style.pointerEvents = '';
+      slot.style.removeProperty('--slot-angle');
+      var card = cardOf(slot);
+      if (card && card.style) {
+        card.style.transform = '';
+      }
+    }
+
+    this.slots = this.originals.slice();
+    this.viewport.style.height = '';
+    this.ring.style.removeProperty('--arc-radius');
+    this.ring.style.removeProperty('--arc-card-width');
+  };
+
   Arc.prototype.watchResize = function () {
     var self = this;
     var timer = 0;
@@ -402,12 +444,10 @@
            half-dismantling it, leave it built but let the stylesheet hand the
            grid back: [data-arc-state] is what every arc rule hangs off. */
         if (global.innerWidth < MIN_VIEWPORT) {
-          /* Hand the grid back. The stylesheet stops applying arc rules the
-             moment the state stops being live, but the measured height is an
-             INLINE style and would survive, boxing the grid into the arc's
-             dimensions and clipping it. It has to be cleared here. */
-          self.shell.setAttribute('data-arc-state', 'idle');
-          self.viewport.style.height = '';
+          if (self.shell.getAttribute('data-arc-state') !== 'idle') {
+            self.shell.setAttribute('data-arc-state', 'idle');
+            self.teardown();
+          }
           return;
         }
         self.shell.setAttribute('data-arc-state', 'live');

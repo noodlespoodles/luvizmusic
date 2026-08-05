@@ -650,11 +650,38 @@ test('an idle arc never clips the grid it hands back', () => {
   }
 });
 
-test('the driver clears the measured height when it hands the grid back', () => {
-  const code = readCode(DRIVER_FILE);
-  assert.ok(
-    /data-arc-state',\s*'idle'\);[\s\S]{0,200}?viewport\.style\.height\s*=\s*''/.test(code),
-    'going idle must clear the inline height, which no stylesheet rule can undo'
+test('handing the grid back removes every clone and every inline style', () => {
+  const { shell, ring } = makePage({ cards: 4 });
+  const arcApi = loadDriverForPage();
+  assert.equal(arcApi.init(), true, 'the arc must build before it can be torn down');
+
+  const built = ring.children.length;
+  assert.ok(built > 4, 'the ring was padded');
+
+  /*
+    A live resize below the breakpoint is the case a reload can never catch.
+    Dropping data-arc-state stops the stylesheet applying, but the padding is
+    real elements and the frame loop's opacity and visibility are INLINE, so
+    the grid would come back holding dozens of faded duplicates.
+  */
+  arcApi.current().teardown();
+
+  assert.equal(ring.children.length, 4, 'only the real mixes are left');
+  assert.equal(
+    ring.children.filter((c) => c.getAttribute('data-arc-clone') !== null).length,
+    0,
+    'no clone survives'
+  );
+  assert.equal(indexed(ring).length, 4, 'every real mix is still claimable');
+  for (const slot of ring.children) {
+    assert.equal(slot.style.opacity, '', 'the frame loop opacity is cleared');
+    assert.equal(slot.style.visibility, '', 'no card is left hidden');
+    assert.equal(slot.style.pointerEvents, '', 'no card is left unclickable');
+  }
+  assert.equal(
+    shell.querySelector('.mix-arc__viewport').style.height,
+    '',
+    'the measured height is cleared - no stylesheet rule can undo an inline one'
   );
 });
 
