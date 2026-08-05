@@ -317,20 +317,33 @@
      ================================================================== */
 
   function mixCard(mix, index) {
-    /* NO `reveal` HERE. The arc writes transform and opacity on this card
-       on every frame, and .reveal--pending sets both, so a reveal on the
-       card would be clobbered and silently never play. The shell in
-       index.html carries it instead (KTD5). */
-    var card = el('li', 'mix-card');
+    /*
+      TWO ELEMENTS, NOT ONE (KTD8). The <li> is the SLOT: the arc hangs it
+      off a circle thousands of pixels across and leans it by its own angle,
+      so its transform origin sits far outside itself. The <article> inside
+      is the CARD, which scales about its own middle and is what the player
+      bar claims and appends its play button to. Merging them would send the
+      play button sliding off down the arc.
+
+      The <li> also has to stay an <li>: a <div> inside a <ul> is invalid.
+
+      NO `reveal` on either. The arc writes transform and opacity on both on
+      every frame, and .reveal--pending sets both, so a reveal here would be
+      clobbered and silently never play. The shell in index.html carries it
+      instead (KTD5).
+    */
+    var slot = el('li', 'mix-arc__slot');
+    var card = el('article', 'mix-card');
     card.setAttribute('data-mix-index', String(index));
     if (isFilled(mix.provider)) {
       card.setAttribute('data-provider', mix.provider);
     }
 
-    card.appendChild(
-      mediaFigure(mix.artwork, mix.title, 'mix-card__figure media media--square duotone duotone--bright')
-    );
-
+    /*
+      TAGS FIRST, THEN THE COVER. That is the reference's order and it is
+      the one thing about the card that reads differently from the grid the
+      site shipped with, where the picture came first.
+    */
     var meta = el('div', 'mix-card__meta');
     var providerLabel = PROVIDER_LABELS[mix.provider] || mix.provider || 'Unknown';
     meta.appendChild(el('span', 'chip chip--bone', providerLabel));
@@ -340,6 +353,17 @@
       meta.appendChild(el('span', 'chip chip--bright', mix.beatGrid[0].bpm + ' BPM'));
     }
     card.appendChild(meta);
+
+    /* SQUARE, not the reference's 2:3 portrait (KTD3). Mixcloud artwork is
+       square, the covers on disk are square, and js/mix-art.js draws square
+       ones for the mixes that have no picture. Cropping them to a book
+       shape would ruin all three. */
+    var figure = mediaFigure(
+      mix.artwork, mix.title, 'mix-card__figure media media--square duotone duotone--bright'
+    );
+    /* Inert until U9 builds the cursor layer that reads it. */
+    figure.setAttribute('data-cursor', 'view');
+    card.appendChild(figure);
 
     card.appendChild(el('h3', 'mix-card__title', mix.title));
 
@@ -367,7 +391,8 @@
       card.appendChild(row);
     }
 
-    return card;
+    slot.appendChild(card);
+    return slot;
   }
 
   function renderMixes(mixes) {

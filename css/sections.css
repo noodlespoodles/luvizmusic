@@ -92,9 +92,18 @@
   max-width: var(--measure-min);
 }
 
+/*
+  THE BLURB PRINTS HARDER THAN THE REST OF THE QUIET TYPE. It is the only
+  paragraph on the site that sits over the dithered ground at full strength
+  (css/dither.css holds the field back everywhere below the hero, but not
+  here), so it takes the upright text weight instead of the hairline and full
+  ink coverage instead of the quiet band. Both overrides are legibility, not
+  emphasis: it should still read as supporting copy under the tagline.
+*/
 .hero__blurb {
   margin-top: var(--space-m);
-  opacity: var(--ink-coverage-quiet);
+  font-weight: var(--info-weight);
+  opacity: var(--ink-coverage-full);
 }
 
 .hero__jump {
@@ -238,7 +247,39 @@
    carries data-mix-index, and the artwork and title are the hit targets a
    play control will hang off. Until then a card is an honest link out to the
    provider, which works with no player at all.
+
+   THE CARD SITS INSIDE A SLOT. The <li> is the slot the arc hangs off its
+   circle; the <article> inside is the card. With no arc built, the slot is
+   nothing but a grid item wrapping the card, which is exactly what the
+   rules below leave it as.
    ========================================================================= */
+
+/* A plain pass-through until [data-arc-state="live"] gives it a job. */
+.mix-arc__slot {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.mix-arc__slot > .mix-card {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+/*
+  The cover is ruled rather than floated. The reference rounds its corners
+  slightly; ours do not, because --radius-0 is this site's default and print
+  has square corners. The hairline is the part worth taking: it gives the
+  cover an edge on a dark ground without a shadow, which the palette bans.
+*/
+.mix-card__figure {
+  border: var(--rule-thin) solid currentColor;
+  border-radius: var(--radius-0);
+  overflow: hidden;
+  opacity: var(--ink-coverage-full);
+}
 
 .mix-card__meta {
   margin-top: var(--space-s);
@@ -419,16 +460,14 @@
 /* =========================================================================
    7. CONTACT
    -------------------------------------------------------------------------
-   The last section is printed on the other stock. Two inks, one press: the
-   page turns over. Ink is near-black, the loud red is the deep one, focus
-   rings switch to the deep red via the .on-bone rule in css/base.css, and
-   chips flip to their on-bone pairing.
-   ========================================================================= */
+   The last section prints on the SAME near-black stock as every other one.
 
-.section--contact {
-  background-color: var(--ground-bone);
-  color: var(--ink-near-black);
-}
+   It used to turn the page over onto bone. That went when the influences
+   wall moved in underneath it: the wall is the loud thing down here, and a
+   stock change as well was one idea too many in the same square metre. So
+   contact takes the default ground, the default ink and the default red,
+   and carries no .on-bone class at all.
+   ========================================================================= */
 
 .contact__line {
   font-size: var(--type-lede);
