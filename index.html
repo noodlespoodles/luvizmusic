@@ -29,6 +29,7 @@
   <link rel="stylesheet" href="css/layout.css">
   <link rel="stylesheet" href="css/sections.css">
   <link rel="stylesheet" href="css/influences.css">
+  <link rel="stylesheet" href="css/dither.css">
   <link rel="stylesheet" href="css/player.css">
   <link rel="stylesheet" href="css/motion.css">
   <link rel="stylesheet" href="css/section-fx.css">
@@ -42,6 +43,23 @@
   -->
   <a class="skip-link" href="#main">Skip to the words</a>
   <a class="skip-link" href="#player-bar" id="skip-to-player" hidden>Skip to the player controls</a>
+
+  <!--
+    THE DITHERED GROUND (U12).
+
+    A direct child of body, outside every transformed ancestor, so its
+    position: fixed means what it says and --layer-field actually puts it
+    behind the sections rather than in front of them.
+
+    An 8x8 Bayer ordered dither on two plates, which is the arithmetic a
+    one-colour press or a photocopier uses to fake tone from solid ink. It is
+    a ground, not a picture: css/texture.css's grain still sits over the
+    whole page, and if WebGL2 is missing or the visitor asked for reduced
+    motion this element simply stays empty and invisible.
+
+    Decoration with no meaning, so it is hidden from assistive technology.
+  -->
+  <canvas class="dither-field" id="dither-field" data-state="pending" aria-hidden="true"></canvas>
 
   <!--
     THE FIXED MARK AND NAVIGATION (R4).
@@ -155,7 +173,25 @@
           <p class="section-head__note t-caption">Recorded on the night, posted unedited.</p>
         </header>
 
-        <ul class="mix-list" id="mix-list"></ul>
+        <!--
+          THE ARC SHELL. js/mix-arc.js turns the list below into a dragged
+          arc of covers. The shell and its viewport ship INERT: every rule
+          that clips, sizes or full-bleeds them is scoped under
+          [data-arc-state="live"] in css/sections.css and only applies once
+          the arc has actually built. With reduced motion, a narrow screen,
+          or GSAP blocked, no state is ever set and the list below is left
+          alone as the plain grid it has always been.
+
+          The reveal lives HERE rather than on the cards: the arc writes
+          transform and opacity on every card every frame, and .reveal
+          --pending sets both, so a reveal on a card would silently never
+          play (KTD5).
+        -->
+        <div class="mix-arc reveal" data-mix-arc>
+          <div class="mix-arc__viewport">
+            <ul class="mix-list" id="mix-list"></ul>
+          </div>
+        </div>
 
         <noscript>
           <p class="noscript-note t-caption">The mixes and the player need JavaScript. Our sets are also on
@@ -165,38 +201,6 @@
       </div>
     </section>
 
-    <!--
-      U11. THE INFLUENCES WALL (R26, R27, R28, R29).
-
-      Crate-digging, as a section. Movement smears the plates out of register
-      and the wall goes unreadable; stop moving and it converges and the names
-      snap into focus. The names themselves are real text in source order, so
-      a screen reader reads the owner's list exactly as it is written and only
-      the decorative offset plates - which js/influences.js adds, marked
-      aria-hidden - are hidden from it.
-
-      The eyebrow deliberately carries no number: the other four sections were
-      numbered before this one existed, and renumbering them would change four
-      lines to gain nothing.
-    -->
-    <section id="influences" class="section section--influences" aria-labelledby="influences-title">
-      <div class="section__inner">
-        <header class="section-head">
-          <p class="section-head__eyebrow t-label">Crate / Influences</p>
-          <h2 id="influences-title" class="section-head__title misreg" data-misreg="Influences">Influences</h2>
-          <p class="section-head__note t-caption">The records behind the night. Stop moving and they come into register.</p>
-        </header>
-      </div>
-
-      <div class="influences" id="influences-wall" data-state="pending">
-        <ul class="influences__list"></ul>
-
-        <noscript>
-          <p class="noscript-note t-caption">The influences wall needs JavaScript to draw itself. The names are
-          listed in full in <code>content/influences.js</code>.</p>
-        </noscript>
-      </div>
-    </section>
 
     <section id="events" class="section" aria-labelledby="events-title">
       <div class="section__inner">
@@ -215,13 +219,16 @@
       </div>
     </section>
 
-    <!-- The last section is printed on the bone stock: near-black ink, deep
-         red focus rings, chips flipped to their on-bone pairing. -->
-    <section id="contact" class="section section--contact on-bone" aria-labelledby="contact-title">
+    <!-- The last section prints on the SAME near-black stock as every other
+         one. It used to turn the page over onto bone; that went when the
+         influences wall moved in below it, because the wall is the loud
+         thing down here and a stock change as well was one idea too many in
+         the same square metre. -->
+    <section id="contact" class="section section--contact" aria-labelledby="contact-title">
       <div class="section__inner">
         <header class="section-head">
           <p class="section-head__eyebrow t-label">04 / Say something</p>
-          <h2 id="contact-title" class="section-head__title misreg misreg--on-bone" data-misreg="Contact">Contact</h2>
+          <h2 id="contact-title" class="section-head__title misreg" data-misreg="Contact">Contact</h2>
         </header>
 
         <p class="contact__line">Bookings and press:
@@ -234,6 +241,29 @@
           <p class="noscript-note t-caption">The social links need JavaScript to load. Email us at the address
           above and we will point you at the rest.</p>
         </noscript>
+      </div>
+
+      <!--
+        U11. THE INFLUENCES WALL, the last thing on the page.
+
+        It lost its own section, its title and its blurb: the names are the
+        thing, and a heading explaining them was the least interesting part.
+        It sits AFTER the address and the links, so you finish reading the
+        contact details and then scroll on into a field of type you can shove
+        around with a finger or a mouse.
+
+        DELIBERATELY TALL. The whole device is that movement smears the plates
+        out of register and stillness brings them back, and that needs room to
+        happen in: a band you scroll through, not a strip you glance at.
+
+        R29 IS UNCHANGED. The names are still real text in source order, so a
+        screen reader still gets the owner's list exactly as written. Only the
+        visible heading went; the list keeps an .sr-only one so the names are
+        not just loose at the end of the page with nothing to explain them.
+      -->
+      <div class="influences influences--footer" id="influences-wall" data-state="pending">
+        <h2 class="sr-only">Influences</h2>
+        <ul class="influences__list"></ul>
       </div>
     </section>
 
@@ -270,6 +300,12 @@
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/ScrollTrigger.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/SplitText.min.js" crossorigin="anonymous"></script>
   <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/Observer.min.js" crossorigin="anonymous"></script>
+  <!-- Draggable and Inertia are what let a hand shove the influences wall.
+       Both are free plugins as of GSAP 3.13 and both are pinned like the
+       rest (KTD2). Draggable is what keeps the finger and the mouse on one
+       code path, which is why the wall needs no pointer listener of its own. -->
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/Draggable.min.js" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.15.0/dist/InertiaPlugin.min.js" crossorigin="anonymous"></script>
 
   <!-- 4. Pure logic: no DOM, no browser APIs, unit-tested under node --test. -->
   <script src="js/provider-url.js"></script>
@@ -296,6 +332,7 @@
   <script src="js/player-bar.js"></script>
   <script src="js/scenes.js"></script>
   <script src="js/influences.js"></script>
+  <script src="js/dither-field.js"></script>
   <script src="js/cursor.js"></script>
   <script src="js/marquee.js"></script>
   <script src="js/section-fx.js"></script>

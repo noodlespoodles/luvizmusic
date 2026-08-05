@@ -287,6 +287,81 @@ test('under reduce the module still reports the final states the page needs to r
   }
 });
 
+test('no final state is left behind for an element no scene moves', () => {
+  const plan = loadPlan();
+
+  /*
+    The reverse of the check above, and the half that catches a retired
+    scene. Removing a write but leaving its resting state behind nails an
+    element to a position nothing is ever going to move it away from, which
+    is invisible until something else tries to own that property.
+  */
+  const written = new Set();
+  for (const env of [DESKTOP, MOBILE]) {
+    for (const { write } of allWrites(plan.scenes(env))) {
+      written.add(write.element);
+    }
+  }
+
+  for (const env of [DESKTOP, MOBILE]) {
+    const reduced = Object.assign({}, env, { reduceMotion: true });
+    for (const state of plan.finalStates(reduced)) {
+      assert.ok(
+        written.has(state.element),
+        state.element + ' has a final state but no scene moves it - retire one or the other'
+      );
+    }
+  }
+});
+
+// ---------------------------------------------------------------------------
+// KTD5: the mixes arc owns transform and opacity on its own slots and cards
+// ---------------------------------------------------------------------------
+
+/**
+ * Selectors whose transform and opacity are written every frame by the arc's
+ * placement loop in js/mix-arc.js. A scroll scene that also writes them wins
+ * or loses at random, frame by frame, and throws no error while it does it.
+ */
+const ARC_OWNED = ['.mix-list', '.mix-arc__slot', '.mix-card'];
+
+/** The rightmost compound of a selector, with pseudo-classes stripped. */
+function subject(selector) {
+  const parts = selector.split(/\s*[>+~]\s*|\s+/).filter(Boolean);
+  const last = parts[parts.length - 1] || '';
+  return last.replace(/::?[a-z-]+(\([^)]*\))?/gi, '');
+}
+
+test('no scene writes a property the mixes arc places every frame (KTD5)', () => {
+  const plan = loadPlan();
+
+  for (const env of [DESKTOP, MOBILE]) {
+    for (const { scene, write } of allWrites(plan.scenes(env))) {
+      for (const selector of write.selector.split(',')) {
+        const target = subject(selector.trim());
+        assert.ok(
+          !ARC_OWNED.includes(target),
+          scene.id + ' writes ' + write.properties.join('/') + ' on ' + target +
+            ', which the arc placement loop overwrites every frame'
+        );
+      }
+    }
+  }
+});
+
+test('the mixes entry scene slides the arc shell, not the list inside it', () => {
+  const plan = loadPlan();
+  const scene = byId(plan.scenes(DESKTOP)).get('mix-rail-entry');
+  assert.ok(scene, 'the mixes section must still have an entry scene');
+  assert.equal(scene.writes.length, 1, 'the entry scene moves one element, the shell');
+  assert.equal(scene.writes[0].element, 'mix-rail');
+  assert.equal(
+    scene.writes[0].selector,
+    '.mix-arc',
+    'the shell is what slides in; the list inside it belongs to the arc'
+  );
+});
+
 // ---------------------------------------------------------------------------
 // Breakpoint parity
 // ---------------------------------------------------------------------------

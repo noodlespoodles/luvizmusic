@@ -143,8 +143,10 @@
     'grain-layer': ':root',
     'crew-name': '.crew-card__name',
     'crew-plates': '#crew',
-    'mix-rail': '.mix-list',
-    'mix-rail-lead': '.mix-list > .mix-card:first-child',
+    /* The SHELL, not the list inside it. U1's arc places every slot and card
+       itself, every frame, so a scene that wrote them would fight it (KTD5).
+       The shell is outside the ring and is safe to slide. */
+    'mix-rail': '.mix-arc',
     'mix-active-art': '.mix-card.is-active .mix-card__figure, .mix-card[aria-current="true"] .mix-card__figure',
     'event-row': '.event',
     'contact-type': '#contact .section-head__title'
@@ -335,13 +337,19 @@
     },
 
     /* ---------------------------------------------------------------
-       5. The mixes rail slides in and the leading card overshoots.
+       5. The mixes arc slides in from the left.
 
-       It slides in from the LEFT and the overshoot is a scale rather
-       than a rightward excursion. A card that travelled past its resting
-       place to the right would widen the document and put a horizontal
-       scrollbar on the page (R18), which is not a trade worth making for
-       a flourish.
+       It slides in from the LEFT and never past its resting place to the
+       right, because a rightward excursion would widen the document and
+       put a horizontal scrollbar on the page (R18).
+
+       IT MOVES THE SHELL, NOT THE CARDS. There used to be a second write
+       here that overshot the leading card's scale. It was retired with
+       the arc (KTD5): the arc's placement loop writes transform and
+       opacity on every slot and card on every frame of a drag, so a
+       scene writing the same properties on the same elements would win
+       or lose at random and throw nothing while it did. The shell sits
+       outside the ring, so sliding it is safe.
        --------------------------------------------------------------- */
     {
       id: 'mix-rail-entry',
@@ -351,13 +359,12 @@
       end: 'top 35%',
       driver: 'scroll',
       scrub: 1,
-      loudEvent: 'the rail slides in from the left and the leading card overshoots',
+      loudEvent: 'the arc slides in from the left',
       area: 'section',
-      amounts: { slideRem: 3.5, overshootGain: 0.06 },
+      amounts: { slideRem: 3.5 },
       timing: {},
       writes: [
-        write('mix-rail', ['transform']),
-        write('mix-rail-lead', ['transform'])
+        write('mix-rail', ['transform'])
       ]
     },
 
@@ -490,12 +497,7 @@
     {
       element: 'mix-rail',
       set: { x: 0 },
-      why: 'the rail sits where the layout put it'
-    },
-    {
-      element: 'mix-rail-lead',
-      set: { x: 0, scale: 1 },
-      why: 'the leading card is the same size as the rest'
+      why: 'the arc shell sits where the layout put it'
     },
     {
       element: 'mix-active-art',

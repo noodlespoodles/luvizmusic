@@ -533,35 +533,28 @@
       });
     },
 
-    /* 5. The rail slides in FROM THE LEFT and the leading card settles out
-          of an overshoot. Nothing travels right of where it belongs: that
-          would widen the document and put a horizontal scrollbar on the
-          page (R18). */
+    /* 5. The arc shell slides in FROM THE LEFT. Nothing travels right of
+          where it belongs: that would widen the document and put a
+          horizontal scrollbar on the page (R18).
+
+          THE SHELL, NOT THE CARDS. js/mix-arc.js writes transform and
+          opacity on every slot and card on every frame, so this scene must
+          stay outside the ring or the two fight silently (KTD5). */
     'mix-rail-entry': function (scene) {
-      var rail = one('.mix-list');
-      if (!rail) {
+      var shell = one('.mix-arc');
+      if (!shell) {
         return;
       }
-      var lead = one('.mix-list > .mix-card:first-child');
-      var targets = lead ? [rail, lead] : [rail];
-      var timeline = scrubbed(scene, targets);
+      var timeline = scrubbed(scene, [shell]);
       if (!timeline) {
         return;
       }
       timeline.fromTo(
-        rail,
+        shell,
         { x: -scene.amounts.slideRem + 'rem' },
         { x: 0, ease: 'none' },
         0
       );
-      if (lead) {
-        timeline.fromTo(
-          lead,
-          { scale: 1 + scene.amounts.overshootGain },
-          { scale: 1, ease: 'power2.out', transformOrigin: '50% 50%' },
-          0
-        );
-      }
     },
 
     /* 6. The playing card pulses on the beat. Small area, transform only,

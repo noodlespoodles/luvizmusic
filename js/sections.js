@@ -317,7 +317,11 @@
      ================================================================== */
 
   function mixCard(mix, index) {
-    var card = el('li', 'mix-card reveal');
+    /* NO `reveal` HERE. The arc writes transform and opacity on this card
+       on every frame, and .reveal--pending sets both, so a reveal on the
+       card would be clobbered and silently never play. The shell in
+       index.html carries it instead (KTD5). */
+    var card = el('li', 'mix-card');
     card.setAttribute('data-mix-index', String(index));
     if (isFilled(mix.provider)) {
       card.setAttribute('data-provider', mix.provider);
