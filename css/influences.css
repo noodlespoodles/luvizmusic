@@ -173,7 +173,7 @@
   page still never scrolls sideways.
 */
 .influences__name--bleed {
-  font-size: var(--step-5);
+  font-size: var(--step-6);
   font-style: var(--voice-style);
   font-weight: var(--voice-weight);
   letter-spacing: var(--track-display);

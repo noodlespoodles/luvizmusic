@@ -8,7 +8,7 @@ what the site is. This file is only about where the work stopped.
 
 ```
 cd "Other dev/Luvizmusic"     # its own git repo, branch feat/luvizmusic-site, NO remote
-node --test                    # 183 tests, from the repo root. NOT `node --test tests/`
+node --test                    # 208 tests, from the repo root. NOT `node --test tests/`
 PREVIEW-SITE.bat               # double-click, serves on localhost, opens a browser
 ```
 
@@ -18,7 +18,10 @@ evidence rather than asserting things work.
 
 ## The headline
 
-The site renders, the player works, the choreography runs. **Ben's standing
+The site renders, the player works, the choreography runs, and the influences
+wall is in. **Nobody has yet looked at the influences wall on screen** - it
+landed as the session ran out of context, so its verification is a report, not
+an observation. Look at it first. **Ben's standing
 note is that the GSAP work is under-delivered against the brief**: "It looks
 really good as it stands, but I think we can push it quite a lot further."
 The original ask was maximalist, intricate, out-there. What exists is
@@ -28,17 +31,11 @@ tasteful and restrained by comparison. That is the main job next.
 
 U0 iOS spike page, U1 skeleton and content model, U2 fonts, U3 visual system,
 U4 page shell and nav and boot, U5 four-provider adapter, U6 player bar,
-U7 beat clock and intensity signal, U8 scroll choreography, plus
-`js/mix-art.js` (generated cover art) and `js/nav-transition.js`.
+U7 beat clock and intensity signal, U8 scroll choreography, U11 influences
+wall, plus `js/mix-art.js` (generated cover art) and `js/nav-transition.js`.
 
 ## Not built
 
-- **U11, the influences wall.** The biggest missing piece and the most
-  typographically ambitious. ~92 artist names in `content/influences.js`,
-  planned in the plan's U11 section: names smear when the visitor moves,
-  resolve when they stop, flash on the beat. An agent was mid-build at
-  handover, so check whether `js/influences.js` and a `#influences` section
-  exist before starting.
 - **U9**, custom cursor, marquee with a real pause control, swipe rail,
   section effects.
 - **U10**, the owner handbook. No em-dashes in it, that is a standing
