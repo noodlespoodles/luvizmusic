@@ -40,6 +40,23 @@
 
 .hero__wordmark {
   display: block;
+  /*
+    THE GLYPHS ARE ALLOWED OUT OF THE viewBox, AND THEY HAVE TO BE.
+
+    textLength pins the ADVANCE width to exactly 1000, which is the whole
+    viewBox. Advance width is not ink width: this face is oblique, so the
+    bottom-left of the L reaches about 2 units left of the origin and the
+    C's bowl about 14 units past the end. An SVG root clips to its viewport
+    by default, so both were being sliced off flat - the L shaved on its
+    corner, the C cut down its curve.
+
+    Letting the mark paint outside its own box is the fix that changes
+    nothing else: no rescaling, no reflow, no nudged viewBox that would
+    quietly alter the mark's proportions. The trim crop below is a separate,
+    deliberate thing and still happens - .section--hero clips, so the page
+    still never scrolls sideways (R18).
+  */
+  overflow: visible;
   width: 118%;
   /* base.css caps every img and svg at 100% so nothing can push the page
      sideways. This is the one deliberate exception, and it is safe because
