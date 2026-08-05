@@ -414,6 +414,23 @@
 .mix-card[data-cue="true"] {
   position: relative;
   cursor: pointer;
+  /*
+    THE GUTTER THE CUED RULE LIVES IN, HELD OPEN ON EVERY CLAIMED CARD, AND
+    PAID FOR OUT OF THE MARGIN RATHER THAN THE TEXT.
+
+    The padding is on [data-cue] rather than [data-active] so that cueing a
+    mix never reflows it: every claimed card holds the same gutter, and the
+    rule simply appears in it.
+
+    The negative margin is the part that matters. Padding alone would eat
+    8px of content width, and at this type size that is the difference
+    between "Shadowmixer" wrapping after the word and breaking mid-word into
+    "Shadowmixe / r". Widening the border box by exactly what the padding
+    takes leaves the content box the width and position it always had, so
+    not one line of type moves.
+  */
+  padding-left: var(--space-2xs);
+  margin-left: calc(-1 * var(--space-2xs));
 }
 
 .mix-card__transport {
@@ -469,10 +486,31 @@
   opacity: var(--ink-coverage-quiet);
 }
 
-/* The mix the transport is pointed at, marked on the card as well as in the
-   bar, so the two never disagree about what is loaded. */
-.mix-card[data-active="true"] {
-  box-shadow: inset var(--rule-thick) 0 0 0 var(--red-bright);
+/*
+  The mix the transport is pointed at, marked on the card as well as in the
+  bar, so the two never disagree about what is loaded.
+
+  THE RULE STANDS IN ITS OWN GUTTER. It used to be an inset box-shadow,
+  which paints a bar over the first few pixels of the card's own box. The
+  card had no left padding, so the tags, the cover, the title and the credit
+  all began flush at that same edge, and the bar landed straight through the
+  first letter of every line.
+
+  It is drawn inside the padding the rule above holds open, NOT outside the
+  card. Hanging it in the gap beside the card was tried and rejected: the gap
+  is the page gutter at narrow widths, so on a phone the rule fell off the
+  left of the screen entirely. Living in its own padding makes it independent
+  of the viewport, so it reads identically at 320px and at 1920px.
+*/
+.mix-card[data-active="true"]::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  width: var(--rule-thick);
+  background-color: var(--red-bright);
+  pointer-events: none;
 }
 
 .mix-card[data-active="true"] .mix-card__cue {
