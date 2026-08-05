@@ -1,0 +1,192 @@
+/* =========================================================================
+   LUVIZMUSIC - tokens
+   U3. Colour, grain, spacing, rule weights, radius, stacking layers.
+
+   The whole site is two inks on one stock. Near-black is the stock, bone
+   white and red are the inks. There is no third colour anywhere in the
+   design and no gradient between them that is not made of those three.
+
+   Read this file as a print spec, not as a theme. "Ground" means paper.
+   "Ink" means what the press lays down. Effects elsewhere in the CSS are
+   things that happen to ink and paper - misregistration, posterisation,
+   duotone separation, grain - never things that happen to light.
+
+   EVERY colour used anywhere in the site comes from this file. Later
+   stylesheets must reference these custom properties and must not declare
+   a literal colour of their own; tests/contrast.test.js enforces that for
+   css/texture.css and enforces the two-red rule here.
+   ========================================================================= */
+
+:root {
+
+  /* -----------------------------------------------------------------------
+     STOCKS. Exactly two, and the test suite holds it to exactly two.
+     Near-black rather than pure black: #0A0A0A is paper under a bulb, and
+     it stops the grain overlay from clipping to nothing in the shadows.
+     Bone white rather than #FFF: uncoated stock, warm, never a lightbox.
+     ----------------------------------------------------------------------- */
+
+  --ground-near-black: #0A0A0A;
+  --ground-bone: #F5F1E8;
+
+  /* -----------------------------------------------------------------------
+     INKS.
+
+     Two reds, not one (KTD9). Computed contrast forces it - one red cannot
+     serve both stocks:
+
+       #FF1A1A on #0A0A0A   5.105:1   AA for body text
+       #FF1A1A on #F5F1E8   3.441:1   display only, never body text
+       #C1121F on #F5F1E8   5.522:1   AA for body text
+       #C1121F on #0A0A0A   3.181:1   display only, never body text
+
+     So: --red-bright is the on-dark text red, --red-deep is the on-bone
+     text red. Using the wrong one on the wrong stock is a contrast bug, not
+     a style choice. A third red is not permitted; the token file is tested
+     for exactly two red names AND exactly two red-hued values, so a third
+     cannot arrive under a name like --accent or --hot.
+     ----------------------------------------------------------------------- */
+
+  --red-bright: #FF1A1A;
+  --red-deep: #C1121F;
+
+  /* Bone as an ink, on the near-black stock: 17.6:1. The workhorse. */
+  --ink-bone: var(--ground-bone);
+
+  /* Ink on the bone stock. */
+  --ink-near-black: var(--ground-near-black);
+
+  /*
+    Quieter text is thinner ink coverage, not a different grey. Dim by
+    opacity so the two-ink rule survives: colour stays a token, the press
+    just lays down less of it.
+  */
+  --ink-coverage-full: 1;
+  --ink-coverage-quiet: 0.66;
+  --ink-coverage-ghost: 0.34;
+
+  /* -----------------------------------------------------------------------
+     FOCUS.
+
+     A focus ring must clear 3:1 against EVERY stock, because fixed chrome
+     and modals put focusable controls over both. Bone fails that rule (it
+     is invisible on bone) and so does near-black. Both reds pass on both
+     stocks, which is why the ring is red ink on either.
+
+       #FF1A1A vs #0A0A0A   5.105:1     #FF1A1A vs #F5F1E8   3.441:1
+       #C1121F vs #F5F1E8   5.522:1     #C1121F vs #0A0A0A   3.181:1
+
+     Red-filled panels are display surfaces and never host focusable
+     controls, so these two rings cover every focusable ground.
+     ----------------------------------------------------------------------- */
+
+  --focus-ring-on-dark: var(--red-bright);
+  --focus-ring-on-bone: var(--red-deep);
+  --focus-ring-width: 3px;
+  --focus-ring-offset: 2px;
+
+  /* -----------------------------------------------------------------------
+     GRAIN (R20, KTD6).
+
+     --grain-amplitude is the opacity of the soft-light noise layer and is
+     the flash-safety knob. The grain steps 10 times a second, which is well
+     over WCAG 2.3.1's three-per-second cap, so it is only lawful because
+     each step's large-area relative-luminance change is small. At 0.055 the
+     worst-case frame-to-frame delta across the whole tone scale is about
+     0.018, against a limit of 0.10 - texture movement, not a flash.
+
+     tests/contrast.test.js recomputes that bound from this number using the
+     W3C soft-light formula and the WCAG luminance curve. Raising this value
+     is allowed only if that test still passes. Do not raise it "just to
+     see": it is an accessibility limit, not a taste dial.
+
+     --grain-swell is the 0..1 handle U8's hero scene ramps. texture.css
+     clamps it to 0..1 so no animation can push the effective opacity above
+     --grain-amplitude, which keeps R20 true for every frame of every scene
+     rather than only for the resting state.
+     ----------------------------------------------------------------------- */
+
+  --grain-amplitude: 0.055;
+  --grain-swell: 1;
+  --grain-tile: 220px;
+  --grain-rate: 10;
+  --grain-cycle: 1s;
+
+  /* -----------------------------------------------------------------------
+     MISREGISTRATION.
+
+     Off-press plate drift, in the 1-3px band a real two-colour press
+     produces. Bigger than 3px stops reading as a printing fault and starts
+     reading as a drop shadow, which is the exact wrong reference.
+     U8's beat-driven scenes rewrite these two at run time.
+     ----------------------------------------------------------------------- */
+
+  --misreg-x: 2px;
+  --misreg-y: 1px;
+  --misreg-ghost: 0.55;
+
+  /* -----------------------------------------------------------------------
+     PHOTOGRAPHY.
+
+     Duotone and posterisation knobs. The contrast pushes are what a
+     photocopier and an enlarger do to a print; they are deliberately hard.
+     ----------------------------------------------------------------------- */
+
+  --duotone-contrast: 1.18;
+  --duotone-brightness: 1.02;
+  --poster-contrast: 2.3;
+  --poster-brightness: 1.08;
+
+  /* -----------------------------------------------------------------------
+     SPACING. A 4px-derived scale in rem so it respects the user's text size.
+     ----------------------------------------------------------------------- */
+
+  --space-3xs: 0.25rem;
+  --space-2xs: 0.5rem;
+  --space-xs: 0.75rem;
+  --space-s: 1rem;
+  --space-m: 1.5rem;
+  --space-l: 2.5rem;
+  --space-xl: 4rem;
+  --space-2xl: 6rem;
+  --space-3xl: 9rem;
+
+  /* -----------------------------------------------------------------------
+     RULE WEIGHTS. Ruled boxes and supermarket signage are drawn with these.
+     ----------------------------------------------------------------------- */
+
+  --rule-hair: 1px;
+  --rule-thin: 2px;
+  --rule-thick: 4px;
+  --rule-slab: 8px;
+
+  /* -----------------------------------------------------------------------
+     RADIUS. Print has square corners. --radius-0 is the default for
+     everything; anything above --radius-1 needs a reason in a comment.
+     --radius-punch exists solely for the hole in a price tag.
+     ----------------------------------------------------------------------- */
+
+  --radius-0: 0;
+  --radius-1: 2px;
+  --radius-2: 4px;
+  --radius-punch: 50%;
+
+  /* -----------------------------------------------------------------------
+     STACKING LAYERS.
+
+     The grain sits over the content and under the fixed chrome: the mark
+     and the nav are the never-degraded reference the degrading field is
+     measured against, so nothing may lay texture over them.
+     Every fixed element is a direct child of body, outside any transformed
+     ancestor, so these numbers actually mean something.
+     ----------------------------------------------------------------------- */
+
+  --layer-content: 0;
+  --layer-raised: 10;
+  --layer-grain: 20;
+  --layer-player: 30;
+  --layer-nav: 40;
+  --layer-cursor: 50;
+  --layer-skip: 60;
+
+}

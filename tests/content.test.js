@@ -483,3 +483,29 @@ test('index.html ships the five section landmarks with noscript fallbacks', () =
     assert.match(section[0], /<noscript>/, '#' + id + ' needs a noscript fallback');
   }
 });
+
+// The hero tagline is deliberately duplicated: content/site.js is the source of
+// truth that JavaScript renders, while index.html carries a static copy so the
+// line survives with JavaScript disabled (R22). Because JS overwrites the static
+// copy at boot, editing only index.html looks like it works and then silently
+// reverts. This asserts the two stay in step.
+test('hero tagline in index.html matches content/site.js', () => {
+  const html = fs.readFileSync(path.join(ROOT, 'index.html'), 'utf8');
+  const site = fs.readFileSync(path.join(ROOT, 'content', 'site.js'), 'utf8');
+
+  const fromContent = /tagline:\s*(['"])([\s\S]*?)\1/.exec(site);
+  assert.ok(fromContent, 'content/site.js must declare a tagline');
+
+  const hero = /<section[^>]*id="hero"[\s\S]*?<\/section>/.exec(html);
+  assert.ok(hero, 'index.html must contain a #hero section');
+
+  const staticCopy = /<p[^>]*>([^<]+)<\/p>/.exec(hero[0]);
+  assert.ok(staticCopy, '#hero must carry a static tagline paragraph');
+
+  assert.strictEqual(
+    staticCopy[1].trim(),
+    fromContent[2].trim(),
+    'Tagline drift: edit content/site.js, then mirror it into the #hero <p> in ' +
+      'index.html. content/site.js is what visitors actually see.'
+  );
+});

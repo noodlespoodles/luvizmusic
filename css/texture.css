@@ -1,0 +1,555 @@
+/* =========================================================================
+   LUVIZMUSIC - texture
+   U3. Grain, misregistration, duotone, posterisation, and the H5 retail
+   grammar primitives (ruled boxes, label chips, price tags, barcodes).
+
+   THE RULE THIS FILE OBEYS
+   Every effect here has to be attributable to a physical process: a
+   one-colour press running off register, a photocopier's contrast blowout,
+   an enlarger's grain, a supermarket price gun. Nothing glows. There is no
+   bloom, no halo, no neon, no chromatic aberration. Those read as a 2019
+   template; a print artefact reads as a record sleeve. The tests hold this
+   file to it: no box shadow, no text shadow, no blurs, and no colour that
+   is not a token from css/tokens.css.
+
+   THE RULE THE GRAIN OBEYS
+   The noise field is rendered ONCE into a data URI and then moved by
+   compositor transforms. No SVG filter animates anywhere in this site.
+   Live filters over large areas are the single most expensive thing you
+   can ask a browser to do per frame; a stepped transform on a pre-rendered
+   tile costs a matrix multiply. See KTD6.
+
+   These are reusable primitives. Later units compose them by adding
+   classes; nothing here is section-specific, and no section should
+   reimplement any of it.
+   ========================================================================= */
+
+:root {
+
+  /* -----------------------------------------------------------------------
+     The grain plate.
+
+     A 220x220 tile of monochrome fractal noise, rendered once by the
+     browser when this URI is first decoded, then cached as an image like
+     any other background. The turbulence primitive inside it is static:
+     it exists to generate the tile, not to run per frame.
+
+     Reading it left to right: fractal noise at 3 octaves with stitched
+     tiles so the edges meet when it repeats; desaturated to grey so it
+     lays down as tone and not as colour; then alpha forced solid, because
+     the raw noise is transparent in patches and we want an even field of
+     grey with a mean near 0.5. A mean of 0.5 is what makes soft-light a
+     no-op on average, so the grain adds texture without shifting the
+     overall exposure of the page.
+     ----------------------------------------------------------------------- */
+
+  --grain-plate: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='220' height='220'%3E%3Cfilter id='luviz-grain' x='0%25' y='0%25' width='100%25' height='100%25' color-interpolation-filters='sRGB'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.78' numOctaves='3' stitchTiles='stitch' result='noise'/%3E%3CfeColorMatrix in='noise' type='saturate' values='0' result='grey'/%3E%3CfeComponentTransfer in='grey'%3E%3CfeFuncA type='linear' slope='0' intercept='1'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3Crect width='220' height='220' filter='url(%23luviz-grain)'/%3E%3C/svg%3E");
+
+  /* -----------------------------------------------------------------------
+     Static plate filters for photography.
+
+     Both are applied to a container, never animated, so the browser
+     rasterises the result once and reuses it. Both map the image onto the
+     two-ink axis by construction: desaturate, then a transfer table that
+     sends shadows to the near-black stock (10/255 = 0.039) and highlights
+     to the bright red (255, 26, 26 = 1, 0.102, 0.102).
+
+     Engines differ on whether they resolve a filter referenced from a data
+     URI. That is why the classes below put a plain greyscale-and-contrast
+     push on the child image and only the table mapping on the container:
+     if the reference does not resolve, the photo degrades to a hard
+     black-and-white print on the near-black stock, which is still on
+     palette and still legible. It never degrades to a full-colour photo.
+     ----------------------------------------------------------------------- */
+
+  --plate-duotone: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='luviz-duotone' color-interpolation-filters='sRGB'%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='table' tableValues='0.039 1'/%3E%3CfeFuncG type='table' tableValues='0.039 0.102'/%3E%3CfeFuncB type='table' tableValues='0.039 0.102'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3C/svg%3E#luviz-duotone");
+
+  --plate-posterise: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='luviz-posterise' color-interpolation-filters='sRGB'%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3CfeComponentTransfer%3E%3CfeFuncR type='discrete' tableValues='0.039 0.35 0.68 1'/%3E%3CfeFuncG type='discrete' tableValues='0.039 0.06 0.08 0.102'/%3E%3CfeFuncB type='discrete' tableValues='0.039 0.06 0.08 0.102'/%3E%3C/feComponentTransfer%3E%3C/filter%3E%3C/svg%3E#luviz-posterise");
+
+}
+
+
+/* =========================================================================
+   1. GRAIN
+   ========================================================================= */
+
+/*
+  One overlay for the whole site, on body's ::after so it needs no markup
+  and lands outside every transformed ancestor. It is oversized by half a
+  viewport and offset by a quarter so the stepped transform always has
+  covered ground to move into and never exposes an edge.
+
+  soft-light is the blend that behaves like grain in the emulsion rather
+  than dust on the lens: it darkens where the noise is dark and lifts where
+  it is light, in proportion to what is already there, so black stays black
+  and the texture lives in the mid-tones.
+
+  Opacity is the flash-safety knob and it is clamped, not merely
+  documented. --grain-swell is the 0..1 handle U8's hero scene ramps;
+  clamping it here means no animation anywhere in the site can push the
+  effective opacity past --grain-amplitude, so R20's 10% frame-to-frame
+  luminance bound holds for every frame of every scene rather than only for
+  the resting state. tests/contrast.test.js recomputes that bound from the
+  token using the W3C soft-light formula and the WCAG luminance curve.
+*/
+body::after {
+  content: "";
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 150vw;
+  height: 150vh;
+  margin: -25vh 0 0 -25vw;
+  z-index: var(--layer-grain);
+  pointer-events: none;
+  background-image: var(--grain-plate);
+  background-repeat: repeat;
+  background-size: var(--grain-tile) var(--grain-tile);
+  opacity: calc(var(--grain-amplitude) * clamp(0, var(--grain-swell), 1));
+  mix-blend-mode: soft-light;
+  will-change: transform;
+  animation: luviz-grain-step var(--grain-cycle) steps(1, end) infinite;
+}
+
+/*
+  Ten held positions per second. steps(1, end) makes each interval a hold
+  followed by a jump, so this is a slideshow of ten registrations, not a
+  tween: the eye reads it as film grain rather than as drift. The offsets
+  are percentages of the oversized layer, none of them a whole multiple of
+  the tile, so the field never appears to snap back into register.
+
+  Nothing but transform is touched here. No opacity, no background, no
+  filter, no colour: a keyframe that repainted would put a full-viewport
+  repaint on the compositor ten times a second, and a keyframe that drove
+  a red would be the full-viewport red flash R20 explicitly forbids.
+*/
+@keyframes luviz-grain-step {
+  0%   { transform: translate3d(0, 0, 0); }
+  10%  { transform: translate3d(-1.6%, 0.9%, 0); }
+  20%  { transform: translate3d(1.1%, -1.4%, 0); }
+  30%  { transform: translate3d(-0.7%, -0.6%, 0); }
+  40%  { transform: translate3d(1.8%, 1.2%, 0); }
+  50%  { transform: translate3d(-1.2%, 1.7%, 0); }
+  60%  { transform: translate3d(0.6%, -1.1%, 0); }
+  70%  { transform: translate3d(-1.9%, -1.6%, 0); }
+  80%  { transform: translate3d(1.4%, 0.4%, 0); }
+  90%  { transform: translate3d(-0.4%, 1.5%, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+
+/*
+  Anything that must not be degraded by the field - the fixed mark, the
+  nav, the player bar - sits above the grain rather than opting out of it.
+  The whole device depends on one never-degraded reference: if the mark
+  swims with everything else there is nothing to measure the decay against.
+*/
+.above-grain {
+  position: relative;
+  z-index: var(--layer-nav);
+}
+
+
+/* =========================================================================
+   2. MISREGISTRATION
+   Two plates, printed 1-3px out of alignment. This is not a filter and not
+   a shadow: it is a duplicated element, tinted, offset and blended, which
+   is literally what happens when a press runs off register. It is also
+   close to free - two extra paint operations, no per-frame work.
+   ========================================================================= */
+
+/*
+  Text form. Put the same string in data-misreg as the element's own text:
+
+    <h2 class="misreg" data-misreg="CREW">CREW</h2>
+
+  The base element prints the true impression; the two pseudo-elements are
+  the plates that drifted. Use it on display type only. Generated content
+  is exposed to some screen readers, so a long string risks being read
+  three times; for anything longer than a heading, use the .misreg-stack
+  form below with aria-hidden on the plates.
+*/
+.misreg {
+  position: relative;
+  isolation: isolate;
+}
+
+.misreg::before,
+.misreg::after {
+  content: attr(data-misreg);
+  position: absolute;
+  inset: 0;
+  /* inset: 0 sizes the plate to the padding box, so without inheriting the
+     padding the duplicated glyphs would start flush to the edge and the
+     offset would read as the padding rather than as a plate drifting. */
+  padding: inherit;
+  z-index: -1;
+  pointer-events: none;
+  -webkit-user-select: none;
+  user-select: none;
+  opacity: var(--misreg-ghost);
+  mix-blend-mode: lighten;
+}
+
+.misreg::before {
+  color: var(--misreg-ink-a, var(--red-bright));
+  transform: translate(calc(var(--misreg-x) * -1), calc(var(--misreg-y) * -1));
+}
+
+.misreg::after {
+  color: var(--misreg-ink-b, var(--ink-bone));
+  transform: translate(var(--misreg-x), var(--misreg-y));
+}
+
+/*
+  On the bone stock the plates are darker than the paper, so the blend
+  flips: lighten would erase them, darken keeps them. The inks flip too,
+  because bright red is display-only on bone.
+*/
+.misreg--on-bone {
+  --misreg-ink-a: var(--red-deep);
+  --misreg-ink-b: var(--ink-near-black);
+}
+
+.misreg--on-bone::before,
+.misreg--on-bone::after {
+  mix-blend-mode: darken;
+}
+
+/*
+  Element form, for cards and photographs. Duplicate the node, mark the
+  copies aria-hidden="true", and compose whatever ink you want inside them
+  (usually a .duotone):
+
+    <div class="misreg-stack">
+      <div class="misreg-plate misreg-plate--a duotone" aria-hidden="true">...</div>
+      <div class="misreg-plate misreg-plate--b duotone duotone--bone" aria-hidden="true">...</div>
+      <div class="duotone">...the real one...</div>
+    </div>
+
+  The plate only positions, offsets and blends. It carries no colour of its
+  own, so U8 can animate --misreg-x and --misreg-y on the beat without
+  touching anything else.
+*/
+.misreg-stack {
+  position: relative;
+  isolation: isolate;
+}
+
+.misreg-stack > .misreg-plate {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: var(--misreg-ghost);
+  mix-blend-mode: lighten;
+}
+
+.misreg-plate--a {
+  transform: translate(calc(var(--misreg-x) * -1), calc(var(--misreg-y) * -1));
+}
+
+.misreg-plate--b {
+  transform: translate(var(--misreg-x), var(--misreg-y));
+}
+
+/*
+  Hard offset plate: a solid second impression sitting under an element,
+  square-edged and unblurred. This is the letterpress-offset look that a
+  drop shadow is a soft imitation of. Deliberately not a shadow property.
+*/
+.offset-plate {
+  position: relative;
+  isolation: isolate;
+}
+
+.offset-plate::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  transform: translate(var(--misreg-x), var(--misreg-y));
+  background-color: var(--offset-ink, var(--red-deep));
+}
+
+
+/* =========================================================================
+   3. DUOTONE
+   Two inks on one stock, applied to photography. Wrap the image:
+
+     <figure class="duotone"><img src="..." alt="..."></figure>
+
+   The container is inked; the image is reduced to greyscale and multiplied
+   into it, so a white highlight prints as full ink and a black shadow
+   prints as nothing. That is the same mapping the plate filter above
+   describes, done with a blend mode that every engine supports and that
+   rasterises once. The ::after floors the shadows at the near-black stock
+   with a lighten pass, so nothing bottoms out at pure black and the photo
+   sits on the same paper as everything else.
+   ========================================================================= */
+
+.duotone {
+  --duotone-ink: var(--red-deep);
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  background-color: var(--duotone-ink);
+}
+
+.duotone > img,
+.duotone > picture > img,
+.duotone > video {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  filter: grayscale(1) contrast(var(--duotone-contrast)) brightness(var(--duotone-brightness));
+  mix-blend-mode: multiply;
+}
+
+.duotone::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-color: var(--duotone-floor, var(--ground-near-black));
+  mix-blend-mode: lighten;
+}
+
+/* On the near-black stock, where bright red is the reading ink. */
+.duotone--bright {
+  --duotone-ink: var(--red-bright);
+}
+
+/* Silver gelatin: bone highlights, near-black shadows, no red at all. */
+.duotone--bone {
+  --duotone-ink: var(--ink-bone);
+}
+
+/*
+  The plate variant. The table mapping goes on the container so that if the
+  engine declines to resolve a filter from a data URI, the child's own
+  greyscale-and-contrast still applies and the photo degrades to a hard
+  black-and-white print rather than to full colour.
+*/
+.duotone--plate {
+  background-color: transparent;
+  filter: var(--plate-duotone);
+}
+
+.duotone--plate > img,
+.duotone--plate > picture > img,
+.duotone--plate > video {
+  mix-blend-mode: normal;
+}
+
+.duotone--plate::after {
+  content: none;
+}
+
+
+/* =========================================================================
+   4. POSTERISATION
+   The photocopy register: a hard contrast push that blows the mid-tones
+   out, and, where the engine allows it, a discrete transfer table that
+   collapses what is left into four bands. A third-generation photocopy of
+   a flyer, which is how most of this music was ever advertised.
+   ========================================================================= */
+
+.posterise > img,
+.posterise > picture > img,
+.posterise > video {
+  display: block;
+  width: 100%;
+  filter: grayscale(1) contrast(var(--poster-contrast)) brightness(var(--poster-brightness));
+}
+
+.posterise--plate {
+  filter: var(--plate-posterise);
+}
+
+
+/* =========================================================================
+   5. THE RETAIL GRAMMAR
+   H5's Super Discount vocabulary: ruled boxes, label chips, price tags,
+   barcodes, supermarket signage. This is the rigid counterpoint layer. The
+   grain and the misregistration are what stops the site being sterile; the
+   ruled boxes are what stops it being soup. Everything here is square,
+   measured and deliberately mundane.
+
+   All of it inherits colour, so the same class works on either stock: set
+   `color` on an ancestor and the rules, chips and barcodes follow.
+   ========================================================================= */
+
+.rule {
+  border: 0;
+  border-top: var(--rule-hair) solid currentColor;
+  margin: 0;
+}
+
+.rule--thin  { border-top-width: var(--rule-thin); }
+.rule--thick { border-top-width: var(--rule-thick); }
+.rule--slab  { border-top-width: var(--rule-slab); }
+
+.rule-box {
+  position: relative;
+  border: var(--rule-hair) solid currentColor;
+  border-radius: var(--radius-0);
+  padding: var(--space-s);
+}
+
+.rule-box--thin  { border-width: var(--rule-thin); }
+.rule-box--thick { border-width: var(--rule-thick); }
+.rule-box--slab  { border-width: var(--rule-slab); }
+
+/* A second rule inset from the first: the frame around a price panel. */
+.rule-box--double::before {
+  content: "";
+  position: absolute;
+  inset: var(--space-3xs);
+  pointer-events: none;
+  border: var(--rule-hair) solid currentColor;
+}
+
+/*
+  A labelled panel. Use it to frame anything foreign - a provider's embed,
+  a third-party player - so it reads as a deliberate compartment rather
+  than as someone else's UI leaking in.
+
+    <section class="panel">
+      <span class="panel__label">SOUNDCLOUD</span>
+      ...
+    </section>
+*/
+.panel {
+  position: relative;
+  border: var(--rule-thin) solid currentColor;
+  border-radius: var(--radius-0);
+  padding: var(--space-m) var(--space-s) var(--space-s);
+  background-color: var(--panel-ground, var(--ground-near-black));
+}
+
+.panel__label {
+  position: absolute;
+  top: 0;
+  left: var(--space-s);
+  transform: translateY(-50%);
+  padding: 0 var(--space-2xs);
+  background-color: var(--panel-ground, var(--ground-near-black));
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+/*
+  Label chips. Every filled variant pairs an ink with the one text colour
+  that clears AA on it:
+    bright red fill + near-black text   5.11:1
+    deep red fill   + bone text         5.52:1
+    bone fill       + near-black text  17.56:1
+  Do not recombine them.
+*/
+.chip {
+  display: inline-block;
+  padding: var(--space-3xs) var(--space-2xs);
+  border: var(--rule-hair) solid currentColor;
+  border-radius: var(--radius-0);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.chip--bright {
+  background-color: var(--red-bright);
+  border-color: var(--red-bright);
+  color: var(--ground-near-black);
+}
+
+.chip--deep {
+  background-color: var(--red-deep);
+  border-color: var(--red-deep);
+  color: var(--ink-bone);
+}
+
+.chip--bone {
+  background-color: var(--ink-bone);
+  border-color: var(--ink-bone);
+  color: var(--ground-near-black);
+}
+
+/*
+  Price tag. A left-pointing swing ticket with a punched hole - the
+  supermarket object Super Discount built a whole record label's identity
+  out of. Use it for dates, door prices and set times.
+*/
+.price-tag {
+  position: relative;
+  display: inline-block;
+  padding: var(--space-2xs) var(--space-s) var(--space-2xs) var(--space-l);
+  clip-path: polygon(0 50%, 1.25rem 0, 100% 0, 100% 100%, 1.25rem 100%);
+  background-color: var(--tag-ground, var(--ink-bone));
+  color: var(--tag-ink, var(--ground-near-black));
+}
+
+.price-tag::before {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 1.5rem;
+  width: 0.5rem;
+  height: 0.5rem;
+  margin-top: -0.25rem;
+  border-radius: var(--radius-punch);
+  background-color: var(--tag-punch, var(--ground-near-black));
+}
+
+.price-tag--red {
+  --tag-ground: var(--red-bright);
+  --tag-ink: var(--ground-near-black);
+}
+
+/*
+  Barcode. Irregular bar and gap widths so it scans as a real one rather
+  than as a striped border. Purely decorative: give it aria-hidden="true".
+*/
+.barcode {
+  display: block;
+  height: var(--barcode-height, var(--space-m));
+  background-image: repeating-linear-gradient(
+    90deg,
+    currentColor 0 2px,
+    transparent 2px 5px,
+    currentColor 5px 6px,
+    transparent 6px 10px,
+    currentColor 10px 13px,
+    transparent 13px 15px,
+    currentColor 15px 16px,
+    transparent 16px 21px
+  );
+  background-repeat: repeat-x;
+}
+
+.barcode--tall {
+  --barcode-height: var(--space-l);
+}
+
+
+/* =========================================================================
+   6. REDUCED MOTION
+   Freeze the grain, keep the grain. The texture is the identity of the
+   page; the movement is the part that can make someone ill. Holding the
+   field on a single registration keeps the paper and drops the flicker.
+   Nothing else in this file animates, so this is the whole motion floor
+   for the texture layer.
+   ========================================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+
+  body::after {
+    animation: none;
+    transform: translate3d(0, 0, 0);
+  }
+
+}

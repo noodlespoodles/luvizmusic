@@ -106,7 +106,6 @@ The owner does not write code and will maintain the site himself between parties
 ### Open Questions
 
 - Deferred: "Raph Doug" in the owner's reference list is most likely **Ruf Dug** (Manchester, Ruf Kutz label), at roughly 80% confidence; no artist by the literal spelling exists on Discogs, RA, or SoundCloud. Affects tone only. Build to the Ruf Dug reading; the owner confirms later.
-- Deferred: whether the owner's FF Mark Pro licence covers web serving. Every supplied file carries `OS/2.fsType = 4` (Preview and Print) and `nameID 14` pointing at the FontFont desktop EULA. An owner decision before the site goes public, not a build blocker; KTD8 minimises the exposure surface meanwhile.
 - Deferred: whether the crew holds its own audio files for any mix. If yes, KTD14's self-hosted path removes both the activation relay and the beat-grid burden for those mixes.
 - Deferred: who runs U0's iOS device check, on what hardware and iOS version. The plan names it the largest risk; the owner names the tester.
 
@@ -128,9 +127,13 @@ The owner does not write code and will maintain the site himself between parties
 
 - KTD6. **Grain is a pre-rendered `feTurbulence` data URI stepped by transform; misregistration is duplicated elements with blend modes. No SVG filter animates.** (session-settled: user-approved — chosen over a disciplined conventional treatment: the owner asked for out-there and intricate. Governs R3, R15, R20.) The GSAP team's position on live SVG filters is that they are "pretty horrific for performance" and "100% a no-go" for sustained or wide-area animation. Rendering turbulence once to a data URI and animating an oversized overlay with `steps()` costs a compositor transform. The grain steps at 8-12Hz but each step's large-area luminance delta stays under R20's 10% bound, so it is texture movement rather than a flash; the three-per-second cap governs any effect that does cross that threshold.
 
-- KTD7. **Five self-hosted Mark Pro faces, Latin-only subset, one family.** (session-settled: user-directed — chosen over a free geometric-italic lookalike: the owner supplied the licensed files and wants the exact brand typeface. Governs R1, R25.) Faces: Hairline 250, Regular 400, Bold 700 upright, plus Medium Italic 500 and Heavy Italic 800. Mark OT is excluded: measured coverage is 419 codepoints against Mark Pro's 629, carrying only 13 of 128 Latin Extended-A, so a Polish, Czech, Turkish, or Romanian crew name set in an OT face would fall back to a system font at the loudest typographic moment. Mark Pro Heavy Italic (629 codepoints, italicAngle -12, weight 800) is the display voice instead; there is no Mark Pro 900 italic and none is needed, because Hairline 250 against Heavy Italic 800 already gives the extreme contrast the design wants. Measured Latin-only build: 76,644 bytes total (14.3 / 15.6 / 16.0 / 15.2 / 15.4KB). Latin-Extended would total 105,020 bytes and bust R25.
+- KTD7. **Five self-hosted Mark Pro faces, one family, subset to Latin plus European name characters.** (session-settled: user-directed — chosen over a free geometric-italic lookalike: the owner supplied the licensed files and wants the exact brand typeface. Governs R1, R25.) Faces: Hairline 250, Regular 400, Bold 700 upright, plus Medium Italic 500 and Heavy Italic 800. Mark OT is excluded: measured coverage is 419 codepoints against Mark Pro's 629, carrying only 13 of 128 Latin Extended-A, so a Polish, Czech, Turkish, or Romanian crew name set in an OT face would fall back to a system font at the loudest typographic moment. Mark Pro Heavy Italic (629 codepoints, italicAngle -12, weight 800) is the display voice instead; there is no Mark Pro 900 italic and none is needed, because Hairline 250 against Heavy Italic 800 already gives the extreme contrast the design wants.
 
-- KTD8. **Source OTFs are gitignored; only generated WOFF2 files are committed, alongside the converter script.** (Governs R25.) The site must serve the WOFF2s, so those are committed. The desktop-licensed OTFs need not be, and excluding them keeps the licence exposure to the subset actually required for the web while the open licence question stands. Name IDs 7, 13, and 14 (trademark, licence, licence URL) are never stripped.
+  **The subset range must preserve that rationale.** A Latin-only subset drops all of Latin Extended-A and reproduces exactly the fallback this decision rejected Mark OT to avoid. Measured on the real build: Latin-only 78,784 bytes / 236 codepoints; Latin plus Polish, Czech, Slovak, Hungarian, Turkish, and Romanian characters 89,876 / 297; all of Latin Extended-A 99,992 / 361; Extended-A and -B 105,408 / 398. Ship the second: it is the only variant that both clears R25 with real headroom and delivers what the face set was chosen for. Full Extended-A fits by 8 bytes, which is not a budget.
+
+  Layout features are `kern, calt, locl, case, cpsp, tnum` — tabular figures earn their 1,736 bytes on dates and tracklists. `--layout-features='*'` measures 163,716 bytes on this family, a 2.1x blowup.
+
+- KTD8. **Source OTFs are gitignored; only generated WOFF2 files are committed, alongside the converter script.** (Governs R25.) The site must serve the WOFF2s, so those are committed. The multi-megabyte source OTFs are not served and need not be tracked; `tools/build-fonts.py` regenerates the web faces from the owner's local copy. Name IDs 7, 8, 9, and 14 (trademark, designer, foundry, licence URL) are preserved in every output as correct practice for a licensed face; name ID 13 is absent from these particular source files.
 
 - KTD9. **Two red tokens, not one.** (session-settled: user-approved — chosen over red plus an acid secondary, red on bone, or per-section palette flips: nothing should dilute the red. Governs R2.) Computed contrast forces this. Against `#0A0A0A`, `#FF1A1A` scores 5.105 and clears AA for body text, while `#C1121F` scores 3.172 and is display-only. Inverted, the ordering reverses: bright red on bone white fails at roughly 3.2-3.5, while `#C1121F` on bone scores 5.52. One token cannot serve both grounds.
 
@@ -377,7 +380,7 @@ stateDiagram-v2
 5. Do not convert CFF outlines to TrueType. It is a lossy refit of a licensed display face with no measured size benefit.
 6. Write `@font-face` blocks in `css/type.css` with `font-display: swap`, and preload at most the two above-the-fold faces with `crossorigin` — mandatory even same-origin, or the font downloads twice.
 7. Build the type scale on `clamp()`, always retaining a `rem` term so browser zoom is not defeated. Assign italic to voice (crew names, mix titles, slogans) and upright to information (dates, nav, tracklists).
-8. If the combined budget ever fails, the resolution order is fixed: drop the Hairline face first, then the Medium Italic. Never strip name IDs 7, 13, or 14 while the licence question is open.
+8. If the combined budget ever fails, the resolution order is fixed: drop the Hairline face first, then the Medium Italic. Do not recover bytes by stripping the trademark, foundry, or licence name IDs.
 
 **Execution note:** Load the generated files once in Chrome and Firefox and read the console. Browsers run webfonts through OTS and reject malformed files silently with only a console warning.
 
@@ -676,7 +679,7 @@ stateDiagram-v2
 2. Write `README.md` covering local preview (double-click for layout, `PREVIEW-SITE.bat` for playback), deploying by dragging the folder to Netlify, Vercel, or GitHub Pages, and regenerating fonts with `tools/build-fonts.py`.
 3. State the file-protocol boundary plainly next to the double-click instructions: layout and text work, audio needs the preview server.
 4. Record U0's per-provider iOS result.
-5. Record the open questions the owner owns: the FF Mark Pro web licence, and the Ruf Dug reading of "Raph Doug".
+5. Record the one open question the owner owns: the Ruf Dug reading of "Raph Doug".
 6. Carry the owner-verifiable checklist from the Verification Contract, unchecked, as the handover sign-off.
 7. State the placeholder-content boundary explicitly, and note that a placeholder mix can stop playing because its uploader removed it, which is not a site fault.
 
@@ -716,6 +719,7 @@ stateDiagram-v2
 | File protocol | Double-clicked `index.html` renders layout, type, texture, and text; player shows the preview message | U1, U6 |
 | Content resilience | Each content file corrupted in turn shows a named banner; others still render | U1, U4 |
 | Console | No OTS font warnings, no uncaught errors | U2, U8 |
+| Firefox rendering | Page and webfonts render correctly in Gecko | U2, U8, U9 |
 | Handbook | A non-coder follows `content/README.md` and adds an event | U10 |
 
 ---

@@ -30,8 +30,8 @@
 window.LUVIZ.crew = [
 
   {
-    name: 'Ama Dwomoh',
-    alias: 'LUVIZ',
+    name: 'Ben Vorster',
+    alias: 'DJ Sync',
     bio:
       'Started the night in a rented rehearsal room with two decks and a borrowed sub. ' +
       'Plays the long middle stretch: disco edits into unquantised house, always on the beat, ' +
@@ -44,8 +44,8 @@ window.LUVIZ.crew = [
   },
 
   {
-    name: 'Ruben Castellanos',
-    alias: 'PANORAMA',
+    name: 'Greg Canning',
+    alias: 'DJ Egg',
     bio:
       'Sound engineer by trade, resident by accident. Tunes the room before every night ' +
       'and opens it once the tuning is done. Keeps a running list of records that only ' +
@@ -57,8 +57,8 @@ window.LUVIZ.crew = [
   },
 
   {
-    name: 'Ines Okonkwo',
-    alias: 'SISTER FREQ',
+    name: 'Donovan Pugh',
+    alias: 'DJ Kerry Gold',
     bio:
       'Closes. Trained on gospel organ, which is audible about four hours in. ' +
       'Has never once played a record she could not explain the reason for.',

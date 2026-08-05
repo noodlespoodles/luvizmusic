@@ -1,6 +1,8 @@
 # Licensed desktop font sources (KTD8).
-# Only the generated web fonts (fonts/*.woff2) are committed, alongside the
-# converter script. The OTFs are desktop-licensed and stay off the repo.
+# Only the generated web fonts (assets/fonts/*.woff2) are committed, alongside
+# the converter script (tools/build-fonts.py). Those woff2 files are what the
+# site actually serves, so they must stay tracked. The OTFs are desktop-
+# licensed and stay off the repo.
 FF Mark Pro/
 
 # Windows / macOS shell noise
@@ -17,6 +19,10 @@ $RECYCLE.BIN/
 *.swp
 *.swo
 *~
+
+# Python bytecode, from tools/build-fonts.py
+__pycache__/
+*.py[cod]
 
 # Local scratch
 *.log

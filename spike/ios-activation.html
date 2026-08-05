@@ -1,0 +1,628 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>iOS activation spike - LUVIZMUSIC</title>
+<style>
+  :root {
+    --bg: #0b0b0c;
+    --panel: #17181b;
+    --line: #3a3d44;
+    --ink: #f5f5f5;
+    --dim: #b6b9c0;
+    --wait: #6b7280;
+    --ready: #2563eb;
+    --play: #15803d;
+    --blocked: #b91c1c;
+    --warn: #b45309;
+  }
+  * { box-sizing: border-box; -webkit-text-size-adjust: 100%; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--ink); }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+    font-size: 18px;
+    line-height: 1.4;
+    padding: 0 0 4rem;
+  }
+  .wrap { max-width: 44rem; margin: 0 auto; padding: 0 1rem; }
+  h1 { font-size: 1.7rem; margin: 1.2rem 0 0.3rem; letter-spacing: 0.01em; }
+  h2 { font-size: 1.5rem; margin: 0 0 0.2rem; }
+  p { margin: 0.5rem 0; }
+  a { color: #7dd3fc; }
+
+  .banner {
+    background: var(--warn);
+    color: #000;
+    font-weight: 700;
+    padding: 1rem;
+    border-bottom: 4px solid #000;
+  }
+  .banner .wrap { padding: 0 1rem; }
+  .banner code { background: rgba(0,0,0,0.18); padding: 0.05em 0.3em; border-radius: 3px; }
+  #protocolAlarm {
+    display: none;
+    background: var(--blocked);
+    color: #fff;
+    font-size: 1.15rem;
+    font-weight: 700;
+    padding: 1rem;
+    border-bottom: 4px solid #000;
+  }
+  #protocolAlarm.on { display: block; }
+
+  .origin {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    color: var(--dim);
+    word-break: break-all;
+    margin: 0.6rem 0 0;
+  }
+
+  .card {
+    background: var(--panel);
+    border: 2px solid var(--line);
+    border-radius: 10px;
+    padding: 1rem;
+    margin: 1.4rem 0;
+  }
+  .track { color: var(--dim); font-size: 0.95rem; margin: 0.1rem 0 0.8rem; }
+
+  .status {
+    display: block;
+    text-align: center;
+    font-size: 1.9rem;
+    font-weight: 800;
+    letter-spacing: 0.06em;
+    padding: 0.7rem 0.5rem;
+    border-radius: 8px;
+    margin: 0.6rem 0;
+    background: var(--wait);
+    color: #fff;
+  }
+  .status.ready   { background: var(--ready); }
+  .status.playing { background: var(--play); }
+  .status.blocked { background: var(--blocked); }
+
+  .err {
+    display: none;
+    background: #2a0e0e;
+    border: 2px solid var(--blocked);
+    color: #ffd7d7;
+    border-radius: 8px;
+    padding: 0.6rem 0.7rem;
+    margin: 0.5rem 0;
+    font-size: 1rem;
+    word-break: break-word;
+  }
+  .err.on { display: block; }
+
+  button {
+    font: inherit;
+    font-weight: 800;
+    letter-spacing: 0.05em;
+    width: 100%;
+    min-height: 4.2rem;
+    margin: 0.5rem 0;
+    border: 3px solid #000;
+    border-radius: 10px;
+    background: #f5f5f5;
+    color: #000;
+    cursor: pointer;
+    -webkit-tap-highlight-color: rgba(255,255,255,0.35);
+    touch-action: manipulation;
+  }
+  button.primary { font-size: 1.6rem; background: #22c55e; }
+  button.again   { font-size: 1.25rem; background: #fbbf24; }
+  button.minor   { font-size: 1rem; min-height: 3.2rem; background: #d4d4d8; }
+  button:disabled { background: #4b5563; color: #cbd5e1; border-color: #23262c; cursor: default; }
+
+  .frame {
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    overflow: hidden;
+    margin: 0.8rem 0 0;
+    background: #000;
+  }
+  iframe { display: block; width: 100%; border: 0; }
+
+  #log {
+    background: #000;
+    border: 2px solid var(--line);
+    border-radius: 8px;
+    padding: 0.5rem;
+    margin: 0.6rem 0;
+    max-height: 22rem;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  #log ol { list-style: none; margin: 0; padding: 0; }
+  #log li {
+    font-family: ui-monospace, Menlo, Consolas, monospace;
+    font-size: 0.85rem;
+    line-height: 1.35;
+    padding: 0.28rem 0.2rem;
+    border-bottom: 1px solid #1f2937;
+    color: #e5e7eb;
+    word-break: break-word;
+  }
+  #log li b { color: #fbbf24; }
+  .foot { color: var(--dim); font-size: 0.95rem; }
+</style>
+</head>
+<body>
+
+<div class="banner">
+  <div class="wrap">
+    SERVE THIS PAGE OVER HTTP. Start <code>PREVIEW-SITE.bat</code> and open the
+    address it prints. Do NOT open this file from disk: the SoundCloud, YouTube
+    and Mixcloud handshakes need a real web address and will never report ready
+    from a <code>file://</code> path.
+  </div>
+</div>
+
+<div id="protocolAlarm">
+  <div class="wrap">
+    THIS PAGE WAS OPENED FROM DISK. The result below is meaningless. Close it,
+    start PREVIEW-SITE.bat, and open the printed address instead.
+  </div>
+</div>
+
+<div class="wrap">
+
+  <h1>iOS activation spike</h1>
+  <p>
+    One question: when our own button calls the provider's <code>play()</code>
+    inside the tap, does audio start on iOS Safari? The call crosses into another
+    company's iframe, and iOS may refuse to treat that as a real user tap.
+  </p>
+  <p>
+    Tap <b>PLAY</b> once per provider. If it says BLOCKED, tap <b>TAP AGAIN</b>.
+    Whether the second tap works is the most important thing this page tells us.
+  </p>
+  <p class="origin" id="originLine">origin: (reading)</p>
+
+  <!-- ================= SOUNDCLOUD ================= -->
+  <div class="card" id="card-sc">
+    <h2>1. SoundCloud</h2>
+    <p class="track">
+      Track: <b>"Apollo 11: Eagle Has Landed (Extended)"</b> by NASA
+      (<a href="https://soundcloud.com/nasa/apollo-11-eagle-has-landed" target="_blank" rel="noopener">soundcloud.com/nasa</a>).
+      Public NASA audio, embeddable, up since 2014.
+    </p>
+    <div class="status" id="status-sc">WAITING</div>
+    <div class="err" id="err-sc"></div>
+    <button class="primary" id="play-sc" disabled>PLAY</button>
+    <button class="again" id="again-sc" disabled>TAP AGAIN</button>
+    <div class="frame">
+      <iframe id="frame-sc" height="166" allow="autoplay; encrypted-media"
+              scrolling="no" title="SoundCloud test player"></iframe>
+    </div>
+  </div>
+
+  <!-- ================= YOUTUBE ================= -->
+  <div class="card" id="card-yt">
+    <h2>2. YouTube</h2>
+    <p class="track">
+      Video: <b>"Me at the zoo"</b> by jawed
+      (<a href="https://www.youtube.com/watch?v=jNQXAC9IVRw" target="_blank" rel="noopener">youtube.com/watch?v=jNQXAC9IVRw</a>).
+      The first video ever uploaded to YouTube, embeddable, 19 seconds long.
+    </p>
+    <div class="status" id="status-yt">WAITING</div>
+    <div class="err" id="err-yt"></div>
+    <button class="primary" id="play-yt" disabled>PLAY</button>
+    <button class="again" id="again-yt" disabled>TAP AGAIN</button>
+    <div class="frame">
+      <iframe id="frame-yt" height="240" allow="autoplay; encrypted-media"
+              allowfullscreen title="YouTube test player"></iframe>
+    </div>
+  </div>
+
+  <!-- ================= MIXCLOUD ================= -->
+  <div class="card" id="card-mc">
+    <h2>3. Mixcloud</h2>
+    <p class="track">
+      Show: <b>"Party Time"</b> by Spartacus
+      (<a href="https://www.mixcloud.com/spartacus/party-time/" target="_blank" rel="noopener">mixcloud.com/spartacus/party-time</a>).
+      The show Mixcloud uses in its own widget documentation.
+    </p>
+    <div class="status" id="status-mc">WAITING</div>
+    <div class="err" id="err-mc"></div>
+    <button class="primary" id="play-mc" disabled>PLAY</button>
+    <button class="again" id="again-mc" disabled>TAP AGAIN</button>
+    <div class="frame">
+      <iframe id="frame-mc" height="120" allow="autoplay; encrypted-media"
+              title="Mixcloud test player"></iframe>
+    </div>
+  </div>
+
+  <h2>Event log</h2>
+  <p class="foot">Newest first. Everything the page knows is written here, so nothing is hidden in a console.</p>
+  <button class="minor" id="pauseAll">PAUSE EVERYTHING</button>
+  <button class="minor" id="copyLog">COPY LOG</button>
+  <div id="log"><ol id="logList"></ol></div>
+
+  <p class="foot">
+    Give each tap about ten seconds before you judge it. The page waits seven
+    seconds before saying BLOCKED, then keeps watching for another thirty, and
+    will flip a BLOCKED back to PLAYING if the sound was only slow to arrive.
+    <br><br>
+    Reading the result: PLAYING means the widget's playback position really moved
+    forward, not merely that it claimed to start. BLOCKED means we asked it to play
+    and the position never moved. If the sound is silent but the status says
+    PLAYING, check the phone's mute switch and volume: that is a volume problem,
+    not an activation problem.
+  </p>
+</div>
+
+<script>
+(function () {
+  "use strict";
+
+  var T0 = Date.now();
+  var logList = document.getElementById("logList");
+  var logLines = [];
+
+  function log(who, msg) {
+    var t = ((Date.now() - T0) / 1000).toFixed(1);
+    var line = "[" + t + "s] " + who + ": " + msg;
+    logLines.unshift(line);
+    var li = document.createElement("li");
+    var b = document.createElement("b");
+    b.textContent = "[" + t + "s] " + who + " ";
+    li.appendChild(b);
+    li.appendChild(document.createTextNode(msg));
+    logList.insertBefore(li, logList.firstChild);
+    while (logList.children.length > 250) {
+      logList.removeChild(logList.lastChild);
+    }
+  }
+
+  // ---- protocol check -----------------------------------------------------
+  var isWeb = (location.protocol === "http:" || location.protocol === "https:");
+  document.getElementById("originLine").textContent =
+    "origin: " + location.origin + "   (protocol " + location.protocol + ")";
+  if (!isWeb) {
+    document.getElementById("protocolAlarm").className = "on";
+  }
+  log("PAGE", "loaded over " + location.protocol + " at " + location.origin);
+  log("PAGE", isWeb
+    ? "protocol is fine, provider handshakes can run"
+    : "OPENED FROM DISK, provider handshakes cannot run");
+
+  // ---- per-provider state -------------------------------------------------
+  function Provider(key, name) {
+    this.key = key;
+    this.name = name;
+    this.ready = false;
+    this.taps = 0;
+    this.posAtTap = null;
+    this.verdictTimer = null;
+    this.watchTimer = null;
+    this.verdictGiven = false;
+    this.pollTimer = null;
+    this.lastPos = null;
+    this.statusEl = document.getElementById("status-" + key);
+    this.errEl = document.getElementById("err-" + key);
+    this.playBtn = document.getElementById("play-" + key);
+    this.againBtn = document.getElementById("again-" + key);
+    this.frame = document.getElementById("frame-" + key);
+    this.getPos = null;   // function(cb) -> cb(seconds or null)
+    this.doPlay = null;   // function() -> called synchronously in the tap
+    this.doPause = null;
+  }
+
+  Provider.prototype.setStatus = function (text, cls) {
+    this.statusEl.textContent = text;
+    this.statusEl.className = "status" + (cls ? " " + cls : "");
+  };
+
+  Provider.prototype.error = function (text) {
+    this.errEl.textContent = text;
+    this.errEl.className = "err on";
+    log(this.name, "ERROR " + text);
+  };
+
+  Provider.prototype.markReady = function () {
+    if (this.ready) { return; }
+    this.ready = true;
+    this.setStatus("READY", "ready");
+    this.playBtn.disabled = false;
+    this.againBtn.disabled = false;
+    log(this.name, "widget reported READY, buttons enabled");
+    this.startPolling();
+  };
+
+  Provider.prototype.startPolling = function () {
+    var self = this;
+    if (this.pollTimer) { return; }
+    this.pollTimer = setInterval(function () {
+      if (!self.getPos) { return; }
+      try {
+        self.getPos(function (sec) {
+          if (typeof sec === "number" && isFinite(sec)) { self.lastPos = sec; }
+        });
+      } catch (e) { /* a getter that throws must not kill the page */ }
+    }, 350);
+  };
+
+  // The verdict is based on the position actually moving, because every one of
+  // these widgets will happily report "play" while producing no audio.
+  //
+  // Two deliberate choices. The verdict waits 7 seconds, because a phone on
+  // wifi can spend several seconds buffering and a short window would call
+  // slow buffering a block. And the watch keeps running for 30 seconds after
+  // the verdict, so a late start flips BLOCKED back to PLAYING and says so.
+  // A block that is really a block never starts, no matter how long we wait.
+  var VERDICT_MS = 7000;
+  var WATCH_MS = 30000;
+
+  Provider.prototype.armVerdict = function (label) {
+    var self = this;
+    this.posAtTap = this.lastPos;
+    if (this.verdictTimer) { clearTimeout(this.verdictTimer); }
+    if (this.watchTimer) { clearInterval(this.watchTimer); }
+    this.setStatus("TESTING...", "ready");
+    this.verdictGiven = false;
+    var started = Date.now();
+
+    this.watchTimer = setInterval(function () {
+      var elapsed = Date.now() - started;
+      var moved = (self.posAtTap !== null && self.lastPos !== null &&
+                   self.lastPos > self.posAtTap + 0.25);
+      if (moved) {
+        clearInterval(self.watchTimer);
+        self.watchTimer = null;
+        clearTimeout(self.verdictTimer);
+        self.verdictTimer = null;
+        self.setStatus("PLAYING", "playing");
+        var note = self.verdictGiven
+          ? " AFTER the blocked verdict, so that was slow buffering and not a block"
+          : "";
+        log(self.name, label + " -> PLAYING (position moved " +
+            self.posAtTap.toFixed(2) + "s to " + self.lastPos.toFixed(2) + "s after " +
+            (elapsed / 1000).toFixed(1) + "s)" + note);
+      } else if (elapsed > WATCH_MS) {
+        clearInterval(self.watchTimer);
+        self.watchTimer = null;
+        log(self.name, label + " -> gave up watching after " +
+            (WATCH_MS / 1000) + "s, it never started");
+      }
+    }, 300);
+
+    this.verdictTimer = setTimeout(function () {
+      self.verdictTimer = null;
+      self.verdictGiven = true;
+      if (self.statusEl.textContent !== "PLAYING") {
+        self.setStatus("BLOCKED", "blocked");
+        log(self.name, label + " -> BLOCKED (asked it to play, position never moved" +
+            (self.lastPos === null ? ", position unreadable" :
+             ", still " + self.lastPos.toFixed(2) + "s") +
+            "). Still watching for 30s in case it is only slow.");
+      }
+    }, VERDICT_MS);
+  };
+
+  // The tap handler does nothing before play(). No await, no timer, no promise.
+  Provider.prototype.wire = function () {
+    var self = this;
+    function tap(label) {
+      return function (ev) {
+        if (!self.ready || !self.doPlay) { return; }
+        self.taps++;
+        var n = self.taps;
+        var trusted = (ev && typeof ev.isTrusted === "boolean") ? ev.isTrusted : "unknown";
+        try {
+          self.doPlay();                       // <-- synchronous, first thing
+          log(self.name, label + " (tap #" + n + ", isTrusted=" + trusted +
+              ") called play(), waiting 7s for the position to move");
+        } catch (e) {
+          log(self.name, label + " play() threw: " + (e && e.message ? e.message : e));
+          self.error("play() threw: " + (e && e.message ? e.message : e));
+        }
+        self.armVerdict(label + " tap #" + n);
+      };
+    }
+    this.playBtn.addEventListener("click", tap("PLAY"));
+    this.againBtn.addEventListener("click", tap("TAP AGAIN"));
+  };
+
+  Provider.prototype.readyTimeout = function () {
+    var self = this;
+    setTimeout(function () {
+      if (!self.ready) {
+        self.setStatus("NO ANSWER", "blocked");
+        self.error("The widget never reported ready within 15 seconds. " +
+          "Either the page is not being served over http, the phone has no " +
+          "internet, or the provider script did not load.");
+      }
+    }, 15000);
+  };
+
+  var SC_P = new Provider("sc", "SOUNDCLOUD");
+  var YT_P = new Provider("yt", "YOUTUBE");
+  var MC_P = new Provider("mc", "MIXCLOUD");
+  var all = [SC_P, YT_P, MC_P];
+  // Debug hook, for anyone who does have a console attached.
+  window.__spike = { sc: SC_P, yt: YT_P, mc: MC_P, log: log };
+
+  all.forEach(function (p) { p.wire(); p.readyTimeout(); });
+
+  document.getElementById("pauseAll").addEventListener("click", function () {
+    all.forEach(function (p) {
+      if (p.doPause) { try { p.doPause(); } catch (e) {} }
+    });
+    log("PAGE", "pause requested on all three");
+  });
+
+  document.getElementById("copyLog").addEventListener("click", function () {
+    var text = logLines.join("\n");
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        log("PAGE", "log copied to the clipboard");
+      }, function () {
+        log("PAGE", "could not copy, select the log text by hand");
+      });
+    } else {
+      log("PAGE", "this browser will not copy for us, select the log text by hand");
+    }
+  });
+
+  // ---- iframe sources -----------------------------------------------------
+  // Built here, not in the markup, so the YouTube origin can follow the rule:
+  // set it only under http/https, never under file://.
+  var SC_TRACK = "https://api.soundcloud.com/tracks/172374183";
+  SC_P.frame.src = "https://w.soundcloud.com/player/?url=" +
+    encodeURIComponent(SC_TRACK) +
+    "&auto_play=false&hide_related=true&show_comments=false&visual=false";
+
+  var YT_ID = "jNQXAC9IVRw";
+  var ytParams = [
+    "enablejsapi=1",
+    "playsinline=1",
+    "autoplay=0",
+    "rel=0",
+    "modestbranding=1"
+  ];
+  if (isWeb) {
+    ytParams.push("origin=" + encodeURIComponent(location.origin));
+    log("YOUTUBE", "origin param set to " + location.origin);
+  } else {
+    log("YOUTUBE", "origin param omitted, protocol is not http or https");
+  }
+  YT_P.frame.src = "https://www.youtube.com/embed/" + YT_ID + "?" + ytParams.join("&");
+
+  var MC_FEED = "https://www.mixcloud.com/spartacus/party-time/";
+  MC_P.frame.src = "https://www.mixcloud.com/widget/iframe/?feed=" +
+    encodeURIComponent(MC_FEED) + "&hide_cover=1&light=0";
+
+  // ---- SoundCloud ---------------------------------------------------------
+  window.__initSoundCloud = function () {
+    if (!window.SC || !window.SC.Widget) {
+      SC_P.error("The SoundCloud widget script loaded but SC.Widget is missing.");
+      return;
+    }
+    var w = SC.Widget(SC_P.frame);
+    SC_P.widget = w;
+    var E = SC.Widget.Events;
+    SC_P.getPos = function (cb) { w.getPosition(function (ms) { cb(ms / 1000); }); };
+    SC_P.doPlay = function () { w.play(); };
+    SC_P.doPause = function () { w.pause(); };
+    w.bind(E.READY, function () { SC_P.markReady(); });
+    // The widget's own progress event is a second, more trustworthy source of
+    // position than polling a getter.
+    w.bind(E.PLAY_PROGRESS, function (p) {
+      if (p && typeof p.currentPosition === "number") {
+        SC_P.lastPos = p.currentPosition / 1000;
+      }
+    });
+    w.bind(E.PLAY, function () { log("SOUNDCLOUD", "widget fired PLAY event"); });
+    w.bind(E.PAUSE, function () { log("SOUNDCLOUD", "widget fired PAUSE event"); });
+    w.bind(E.FINISH, function () { log("SOUNDCLOUD", "widget fired FINISH event"); });
+    w.bind(E.ERROR, function (e) {
+      SC_P.error("widget fired ERROR " + JSON.stringify(e || {}));
+    });
+    log("SOUNDCLOUD", "widget script loaded, waiting for READY");
+  };
+
+  // ---- YouTube ------------------------------------------------------------
+  // Attaching to our own iframe rather than letting the API build one, so the
+  // allow="autoplay" attribute and the params above are exactly what we set.
+  window.onYouTubeIframeAPIReady = function () {
+    log("YOUTUBE", "iframe API loaded, attaching to our iframe");
+    try {
+      var player = new YT.Player(YT_P.frame, {
+        events: {
+          onReady: function () {
+            YT_P.getPos = function (cb) { cb(player.getCurrentTime()); };
+            YT_P.doPlay = function () { player.playVideo(); };
+            YT_P.doPause = function () { player.pauseVideo(); };
+            YT_P.player = player;
+            YT_P.markReady();
+          },
+          onStateChange: function (ev) {
+            var names = { "-1": "unstarted", 0: "ended", 1: "playing",
+                          2: "paused", 3: "buffering", 5: "cued" };
+            log("YOUTUBE", "state -> " + (names[String(ev.data)] || ev.data));
+          },
+          onAutoplayBlocked: function () {
+            YT_P.setStatus("BLOCKED", "blocked");
+            YT_P.error("YouTube fired onAutoplayBlocked: it refused our play() " +
+                       "call as not coming from a real user gesture.");
+          },
+          onError: function (ev) {
+            YT_P.error("player error code " + ev.data +
+                       " (2 bad id, 5 html5, 100 gone, 101/150 embedding not allowed)");
+          }
+        }
+      });
+    } catch (e) {
+      YT_P.error("could not attach the player: " + (e && e.message ? e.message : e));
+    }
+  };
+
+  // ---- Mixcloud -----------------------------------------------------------
+  window.__initMixcloud = function () {
+    if (!window.Mixcloud || !window.Mixcloud.PlayerWidget) {
+      MC_P.error("The Mixcloud widget script loaded but Mixcloud.PlayerWidget is missing.");
+      return;
+    }
+    var w = Mixcloud.PlayerWidget(MC_P.frame);
+    MC_P.widget = w;
+    MC_P.doPlay = function () { w.play(); };
+    MC_P.doPause = function () { w.pause(); };
+    log("MIXCLOUD", "widget script loaded, waiting for ready");
+    w.ready.then(function () {
+      MC_P.getPos = function (cb) {
+        w.getPosition().then(function (sec) { cb(sec); }, function () { cb(null); });
+      };
+      MC_P.markReady();
+      var lastProgressLog = 0;
+      w.events.progress.on(function (pos) {
+        if (typeof pos === "number" && isFinite(pos)) {
+          MC_P.lastPos = pos;
+          if (Date.now() - lastProgressLog > 5000) {
+            lastProgressLog = Date.now();
+            log("MIXCLOUD", "progress event at " + pos.toFixed(2) + "s");
+          }
+        }
+      });
+      w.events.buffering.on(function () { log("MIXCLOUD", "widget fired buffering event"); });
+      w.events.play.on(function () { log("MIXCLOUD", "widget fired play event"); });
+      w.events.pause.on(function () { log("MIXCLOUD", "widget fired pause event"); });
+      w.events.ended.on(function () { log("MIXCLOUD", "widget fired ended event"); });
+      w.events.error.on(function (e) {
+        MC_P.error("widget fired error " + (e && e.message ? e.message : JSON.stringify(e || {})));
+      });
+    }, function (e) {
+      MC_P.error("the widget refused to become ready: " +
+                 (e && e.message ? e.message : e));
+    });
+  };
+
+  // ---- load the three provider scripts ------------------------------------
+  function loadScript(src, onload, onerror) {
+    var s = document.createElement("script");
+    s.src = src;
+    s.async = true;
+    s.onload = onload;
+    s.onerror = onerror;
+    document.head.appendChild(s);
+  }
+
+  loadScript("https://w.soundcloud.com/player/api.js",
+    function () { window.__initSoundCloud(); },
+    function () { SC_P.error("The SoundCloud widget script failed to load."); });
+
+  loadScript("https://www.youtube.com/iframe_api",
+    function () { log("YOUTUBE", "iframe_api script fetched"); },
+    function () { YT_P.error("The YouTube iframe API script failed to load."); });
+
+  loadScript("https://widget.mixcloud.com/media/js/widgetApi.js",
+    function () { window.__initMixcloud(); },
+    function () { MC_P.error("The Mixcloud widget script failed to load."); });
+
+})();
+</script>
+</body>
+</html>

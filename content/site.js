@@ -27,7 +27,7 @@
 window.LUVIZ.site = {
 
   /* One line, under the wordmark. Keep it short - it is set very large. */
-  tagline: 'Nine hours, one room, no encores.',
+  tagline: 'You have no taste. Let us help.',
 
   /* A short paragraph. Two or three sentences reads best. */
   blurb:
