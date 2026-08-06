@@ -35,8 +35,24 @@
   var document = global.document;
   var LUVIZ = global.LUVIZ || (global.LUVIZ = {});
 
-  /* Below this the arc is not a layout, it is a nuisance. The grid stands. */
-  var MIN_VIEWPORT = 768;
+  /*
+    THE FLOOR THE ARC WILL STILL BUILD ON.
+
+    This was 768 on the assumption that an arc of ~270px cards is not a phone
+    layout. That assumption was never measured. Built at 412px the cards take
+    model.CARD_MIN instead - 180px - the centre card stays fully readable,
+    its neighbours tilt off both edges the way they are meant to, and the
+    document gains no horizontal overflow at all.
+
+    It sits at 360 rather than 320 because below that the ring has to give up
+    either the centre card's legibility or the neighbours that make it read
+    as an arc, and a grid says the same thing better.
+
+    THE GRID IS STILL THE FALLBACK, just for fewer reasons: reduced motion,
+    no GSAP, no mixes, or a viewport under this floor. Every arc rule hangs
+    off [data-arc-state], so none of that needs a second layout.
+  */
+  var MIN_VIEWPORT = 360;
 
   /* A resize changes the slot COUNT, not just the placement, so it rebuilds
      the ring. Rebuilding on every resize event would thrash. */
