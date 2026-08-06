@@ -322,6 +322,11 @@
   position: sticky and the page's own scrolling behave. clip just clips.
 */
 #mixes {
+  /* hidden first, clip second, exactly as .section--hero and .influences do
+     it. `clip` is Safari 16 and up; without the fallback an older Safari
+     gets no clipping at all and the full-bleed arc puts a horizontal
+     scrollbar on the page. */
+  overflow-x: hidden;
   overflow-x: clip;
 }
 
