@@ -97,8 +97,28 @@
 
 .masthead__list {
   display: flex;
+  /*
+    IT WRAPS RATHER THAN LOSING A LINK.
+
+    A flex row defaults to nowrap, so when these four labels are wider than
+    the bar they do not reflow - they run off the right-hand end and the last
+    ones simply are not there. The bar is position: fixed, so nothing
+    scrolls to reveal them either: the links are gone, silently, with no
+    error and no visible clue that they ever existed.
+
+    They fit comfortably at the sizes this stylesheet asks for. They stop
+    fitting the moment anything makes the type bigger than we asked - a
+    browser minimum-font-size, a page zoom, a fallback face with wider
+    metrics, an OS text-size setting. Measured at 360px with 22px labels the
+    row needed 383px inside a 313px bar and Contact was off screen entirely.
+
+    Wrapping costs nothing while they fit and degrades to a second line when
+    they do not, which is the same shape as the two-row masthead this band
+    already uses.
+  */
+  flex-wrap: wrap;
   justify-content: space-between;
-  gap: var(--space-2xs);
+  gap: var(--space-3xs) var(--space-2xs);
 }
 
 .masthead__link {
