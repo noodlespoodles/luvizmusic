@@ -442,3 +442,86 @@ test('SplitText is used for the per-line treatment on resolved names', () => {
   assert.ok(/typeof\s+\w*\.?SplitText|typeof SplitText/.test(MODULE_SRC),
     'and it is feature-detected, so a blocked CDN cannot stop the page');
 });
+
+/* -------------------------------------------------------------------------
+   9. The bleed cannot reach the document (R18)
+   -------------------------------------------------------------------------
+   The bleeding band is drawn wider than the screen on purpose, so SOMETHING
+   has to clip it or the whole page scrolls sideways.
+
+   That containment used to be written against the section the wall happened
+   to sit in. When the wall moved into the contact section the rule was left
+   behind pointing at `.section--influences`, a class no element carried any
+   more: it matched nothing, nothing clipped, and a 390px phone got an 857px
+   document with a fixed masthead stretched across all of it.
+
+   These two tests are the fence around that. The first says the clip lives
+   on the wall itself, so it travels with the thing that bleeds. The second
+   says no clip in this stylesheet may name a class index.html does not
+   actually use, which is the general shape of the bug.
+   ------------------------------------------------------------------------- */
+
+/** Selectors of every rule in css/influences.css that clips horizontally. */
+function horizontalClipSelectors() {
+  /* Comments first: this stylesheet carries more prose than declarations. */
+  const source = CSS_SRC.replace(/\/\*[\s\S]*?\*\//g, '');
+  const found = [];
+  const rule = /([^{}]+)\{([^{}]*)\}/g;
+  let match;
+  while ((match = rule.exec(source)) !== null) {
+    if (/overflow-x\s*:\s*clip/.test(match[2])) {
+      found.push(match[1].replace(/\s+/g, ' ').trim());
+    }
+  }
+  return found;
+}
+
+/** The classes index.html actually puts on the wall root. */
+function wallClasses() {
+  const tag = INDEX_SRC.match(/<div[^>]*id="influences-wall"[^>]*>/);
+  assert.ok(tag, 'index.html has a wall root for the clip to sit on');
+  const attr = tag[0].match(/class="([^"]*)"/);
+  return attr ? attr[1].trim().split(/\s+/) : [];
+}
+
+/** Does `selector` name `.cls` itself, rather than a longer class sharing it? */
+function selectorNames(selector, cls) {
+  return new RegExp('\\.' + cls + '(?![\\w-])').test(selector);
+}
+
+test('the wall clips its own bleed, so the page never scrolls sideways (R18)', () => {
+  const selectors = horizontalClipSelectors();
+  assert.ok(selectors.length > 0, 'css/influences.css declares no horizontal clip at all');
+
+  const carried = wallClasses();
+  assert.ok(
+    selectors.some((selector) => carried.some((cls) => selectorNames(selector, cls))),
+    'the clip must be declared on a class the wall root itself carries (' +
+    carried.join(', ') + '), not on whichever section happens to host it. Found: ' +
+    selectors.join(' | ')
+  );
+
+  /* `hidden` first, `clip` second. Safari before 16 has no `clip` at all and
+     would otherwise be left with no containment whatsoever. */
+  assert.match(
+    CSS_SRC.replace(/\/\*[\s\S]*?\*\//g, ''),
+    /overflow-x:\s*hidden;\s*overflow-x:\s*clip/,
+    'the clip keeps its overflow-x: hidden fallback for Safari before 16'
+  );
+});
+
+test('no clip in this stylesheet names a class index.html has dropped', () => {
+  const selectors = horizontalClipSelectors();
+  assert.ok(selectors.length > 0, 'css/influences.css declares no horizontal clip at all');
+
+  selectors.forEach((selector) => {
+    (selector.match(/\.[A-Za-z_][\w-]*/g) || []).forEach((dotted) => {
+      const cls = dotted.slice(1);
+      assert.ok(
+        new RegExp('class="[^"]*\\b' + cls + '(?![\\w-])').test(INDEX_SRC),
+        'the clip rule "' + selector + '" targets .' + cls + ', which nothing in ' +
+        'index.html carries - so it clips nothing and the bleed reaches the document'
+      );
+    });
+  });
+});
