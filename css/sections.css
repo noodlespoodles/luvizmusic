@@ -19,11 +19,18 @@
    viewBox, so the fallback face during the font swap draws at the same width
    as Mark Pro rather than wider.
 
-   ON A PHONE IT IS DELIBERATELY BIGGER THAN THE SCREEN. The mark is set to
-   118% of the column and pulled left, so both ends run off the page. The
-   section clips it. That reads as a sleeve cropped by the trim edge, which
-   is more dramatic at 320px than a timid mark with margins - and because the
-   clipping happens here, the page body still never scrolls sideways (R18).
+   AT REST THE WHOLE MARK IS ON THE SCREEN, AT EVERY WIDTH. It used to be set
+   to 118% of the column and pulled left on a phone, so both ends ran off the
+   trim edge on arrival. Measured on a Pixel that cost 19px off the L and
+   25px off the C - roughly a tenth of the mark - and it read as broken
+   rather than as art direction, because a visitor landing on the page has
+   nothing to compare the crop against yet.
+
+   THE BLEED IS NOW EARNED RATHER THAN ASSUMED. It still happens: the
+   hero-wordmark-bleed scene in js/scene-plan.js grows the mark and drives it
+   past both trim edges as the hero scrolls away, which is the same effect
+   arriving as a move you can see rather than as damage you cannot. The
+   section clips that travel, so the page still never scrolls sideways (R18).
    ========================================================================= */
 
 .section--hero {
@@ -52,18 +59,21 @@
 
     Letting the mark paint outside its own box is the fix that changes
     nothing else: no rescaling, no reflow, no nudged viewBox that would
-    quietly alter the mark's proportions. The trim crop below is a separate,
-    deliberate thing and still happens - .section--hero clips, so the page
-    still never scrolls sideways (R18).
+    quietly alter the mark's proportions. It is also why the widths below are
+    100% and not more: the ink already reaches about 1.4% past the box on the
+    C's side, so a mark set to the full column still lands inside the trim
+    with room to spare rather than exactly on it.
   */
   overflow: visible;
-  width: 118%;
-  /* base.css caps every img and svg at 100% so nothing can push the page
-     sideways. This is the one deliberate exception, and it is safe because
-     .section--hero clips it: the mark runs off both trim edges, the document
-     still never scrolls sideways. */
-  max-width: none;
-  margin-left: -9%;
+  /*
+    ONE WIDTH, EVERY BAND. There is no per-breakpoint override any more: the
+    mark is the column, and the column is already fluid, so it grows with the
+    page without any band being able to nick an edge off it. base.css caps
+    every img and svg at 100%, and this now sits inside that cap rather than
+    needing an exception to it.
+  */
+  width: 100%;
+  margin-left: 0;
   color: var(--ink-bone);
 }
 
@@ -631,10 +641,10 @@
 
 @media (min-width: 600px) {
 
-  .hero__wordmark {
-    width: 106%;
-    margin-left: -3%;
-  }
+  /* NO WORDMARK OVERRIDE HERE ANY MORE. This band used to widen the mark to
+     106% and pull it 3% left, which cropped up to 6px off the C and nothing
+     off the L - an asymmetric nick that read as a rendering fault rather than
+     as a bleed. One width now serves every band. */
 
   .crew-list,
   .mix-list {
@@ -651,11 +661,6 @@
 }
 
 @media (min-width: 1024px) {
-
-  .hero__wordmark {
-    width: 100%;
-    margin-left: 0;
-  }
 
   .crew-list,
   .mix-list {
